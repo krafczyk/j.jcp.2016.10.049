@@ -33,7 +33,6 @@ double R1,R2;  //圆半径
 double ell=1.0;  //椭圆参数，即ell*(x-x0)^2+(y-y0)^2=R^2 
 double s_nu,s_q,SS,cs_2;
 
-double abs( double i);
 void comput_q (int i, int j, int ip, int jp, double R);
 
 
@@ -108,7 +107,8 @@ void init()
   dx=Lx/(NX-2.0); 
   dy=dx; 
   niu=0.02;
-  SS=1.0/1.8;                    //tau
+  //SS=1.0/1.8;                    //tau
+  SS=1.0;                    //tau
   s_nu=-1.0/SS;
   // s_q = s_nu;
   // s_q=-8.0*(2+s_nu)/(8+s_nu);  
@@ -317,21 +317,14 @@ for(i=0;i<=NX;i++)
 
 
 
-double abs( double i)
-{
-	if(i>=0.0) return i;
-	else 
-		return -i;
-}
-
 
 
 void comput_q (int i, int j, int ip, int jp, double R)  //1表示大于0.5，-1表示小于0.5,2为正常格点
 {
      if (ip==i)
 	 {   
-		 yy1  = abs( Center_y+sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
-		 yy2  = abs( Center_y-sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
+		 yy1  = fabs( Center_y+sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
+		 yy2  = fabs( Center_y-sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
 
 		 if(yy1<=yy2) q=yy1;
 		 else q=yy2;
@@ -346,8 +339,8 @@ void comput_q (int i, int j, int ip, int jp, double R)  //1表示大于0.5，-1表示小
 
 		 cc  =  ( ell*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)+Center_x*Center_x-R*R  ) / (ell*kk*kk+1.0);  //注意derta>=0
 
-         x1  =  abs( (b+sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
-         x2  =  abs( (b-sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
+         x1  =  fabs( (b+sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
+         x2  =  fabs( (b-sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
 
 		 if(x1<=x2) q=x1;
 		 else q=x2;
