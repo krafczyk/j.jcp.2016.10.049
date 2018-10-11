@@ -1,0 +1,12 @@
+--- Assets ---
+
+Figures [57] 3: 6+6+3+6+2+6 4: 4+6 5: 8 6: 4+6
+Tables [20] 1: 2*10
+Numbers [0]
+Total [77]
+
+--- Log ---
+
+00:00:00: Start Asset count
+00:06:15: Asset count finished
+
