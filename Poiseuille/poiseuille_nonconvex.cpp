@@ -135,7 +135,7 @@ int main(int argc, char** argv)
        if(header) {
          printf("\"Lattice Size\", \"NY\", \"Gamma\", \"Tau\", \"Error\"\n");
        }
-       printf("%.14f, %i, %.14f, %.14f, %.14f, %.14f\n",dx, NY,gamma,tau,error);
+       printf("%.14f, %i, %.14f, %.14f, %.14f\n",dx, NY,gamma,tau,error);
 
        break; 
      }   
