@@ -6,35 +6,85 @@
 
 #include<string.h> 
 #include<stdio.h> 
+#include "ArgParseStandalone.h"
+#include "utilities.h"
+#include <string>
  
 
 const int Q=9; 
 
-const int NY=11; 
-const int NX=20; 
+int NY=0; 
+int NX=0; 
 
  
 const int e[Q][2]={{0,0},{1,0},{0,1},{-1,0},{0,-1},{1,1},{-1,1},{-1,-1},{1,-1}};    // 9 direction
 const int ne[Q]={0,3,4,1,2,7,8,5,6};                                                // back direction
 const double w[Q]={4.0/9,1.0/9,1.0/9,1.0/9,1.0/9,1.0/36,1.0/36,1.0/36,1.0/36}; 
-double rho[NX+1][NY+1],u[NX+1][NY+1][2],f[NX+1][NY+1][Q],F[NX+1][NY+1][Q],ff[NX+1][NY+1][Q],xlabel[NX+1][NY+1],ylabel[NX+1][NY+1],u_exact[NY+1]; 
-double u0[NX+1][NY+1][2];
 
+double** rho = NULL;
+double*** u = NULL;
+double*** f = NULL;
+double*** F = NULL;
+double*** ff = NULL;
+double** xlabel = NULL;
+double** ylabel = NULL;
+double* u_exact = NULL;
+double*** u0 = NULL;
+int** flag = NULL;
 
 int i,j,k,ip,jp,n; 
 double c,Re,dx,dy,Lx,Ly,dt,rho0,P0,s_nu,s_q,SS,niu,error,Force,U_max,U_s,cs_2,rela_error,ERROR; 
 double a1,a2,a3,a4,a5,q_up,q_down;
  
-void init(); 
+void init(double gamma, double tau); 
 double feq(int k,double rho,double u[2]); 
 void evolution(); 
 void output(int m); 
 void Error(); 
-int flag[NX+1][NY+1];
 void Outdata(int m);
+bool verbose = false;
  
-int main() 
+int main(int argc, char** argv) 
 { 
+  double gamma = 0.;
+  double tau = 0.;
+  int Ny = 0;
+  bool dump_solution_passed = false;
+  std::string solution_filepath;
+  bool header = false;
+
+  ArgParse::ArgParser Parser("Poiseuille Non Convex Simulation");
+  Parser.AddArgument("--gamma", "Set the value for gamma", &gamma, ArgParse::Argument::Required);
+  Parser.AddArgument("--tau", "Set the value for tau", &tau, ArgParse::Argument::Required);
+  Parser.AddArgument("--Ny", "Set the y resolution Ny", &Ny, ArgParse::Argument::Required);
+  Parser.AddArgument("--dump-solution", "Filepath to dump solution at.", &solution_filepath, ArgParse::Argument::Optional, &dump_solution_passed);
+  Parser.AddArgument("--header", "Whether or not to include column headers in the output", &header, ArgParse::Argument::Optional);
+  Parser.AddArgument("--verbose", "Whether to print extra stuff", &verbose, ArgParse::Argument::Optional);
+
+  if(Parser.ParseArgs(argc, argv) < 0) {
+	  printf("Problem parsing arguments!");
+	  return -1;
+  }
+
+  if(Parser.HelpPrinted()) {
+	  return 0;
+  }
+
+  // Set the resolution
+  NY=Ny; 
+  NX=2*(NY-1); 
+
+  rho = New2DArray<double>(NX+1,NY+1);
+  u = New3DArray<double>(NX+1,NY+1,2);
+  f = New3DArray<double>(NX+1,NY+1,Q);
+  F = New3DArray<double>(NX+1,NY+1,Q);
+  ff = New3DArray<double>(NX+1,NY+1,Q);
+  xlabel = New2DArray<double>(NX+1,NY+1);
+  ylabel = New2DArray<double>(NX+1,NY+1);
+  u_exact = new double[NY+1]; 
+  u0 = New3DArray<double>(NX+1,NY+1,2);
+  flag = New2DArray<int>(NX+1,NY+1);
+
   for (i=0;i<=NX;i++)    //tag different boundary
 	  for (j=0;j<=NY;j++)
 	  {
@@ -47,16 +97,18 @@ int main()
 
 	  }
 
-         printf("flag [0][NY]=%d\n",flag[0][NY]);
-         printf("flag [NX][NY]=%d\n",flag[NX][NY]);
-         printf("flag [0][0]=%d\n",flag[0][0]);
-         printf("flag [NX][0]=%d\n",flag[NX][0]);
-         printf("flag [0][3]=%d\n",flag[0][3]);
-         printf("flag [NX][3]=%d\n",flag[NX][3]);
+         //printf("flag [0][NY]=%d\n",flag[0][NY]);
+         //printf("flag [NX][NY]=%d\n",flag[NX][NY]);
+         //printf("flag [0][0]=%d\n",flag[0][0]);
+         //printf("flag [NX][0]=%d\n",flag[NX][0]);
+         //printf("flag [0][3]=%d\n",flag[0][3]);
+         //printf("flag [NX][3]=%d\n",flag[NX][3]);
 
 
-  init();  // initate
-  printf("U_max/c=%f\n",U_max/c);
+  init(gamma, tau);  // initate
+  if(verbose) {
+  fprintf(stderr, "U_max/c=%f\n",U_max/c);
+  }
 
  for(n=0;;n++) 
   { 
@@ -67,27 +119,45 @@ int main()
     { 
       Error(); 
      
-      printf("The %d th computationa result:\n",n);
+      if(verbose) {
+      fprintf(stderr, "The %d th computationa result:\n",n);
       
-      printf("The relative error of 1000 steps is: %.13f ,  error=%.10f  \n",ERROR, error);
+      fprintf(stderr, "The relative error of 1000 steps is: %.13f ,  error=%.10f  \n",ERROR, error);
+      }
       
     }
       
     if(n>0 && fabs(ERROR)<1.0e-10) 
      { 
+       if(dump_solution_passed) {
 	   Outdata(n);
-       printf("NY=%d, q_up=%f , tau=%f , error=%.14f \n",NX,q_up,SS,error);
+       }
+       if(header) {
+         printf("\"Lattice Size\", \"NY\", \"Gamma\", \"Tau\", \"Error\"\n");
+       }
+       printf("%.14f, %i, %.14f, %.14f, %.14f, %.14f\n",dx, NY,gamma,tau,error);
 
        break; 
      }   
   } 
+
+  Delete2DArray<double>(rho, NX+1,NY+1);
+  Delete3DArray<double>(u, NX+1,NY+1,2);
+  Delete3DArray<double>(f, NX+1,NY+1,Q);
+  Delete3DArray<double>(F, NX+1,NY+1,Q);
+  Delete3DArray<double>(ff, NX+1,NY+1,Q);
+  Delete2DArray<double>(xlabel, NX+1,NY+1);
+  Delete2DArray<double>(ylabel, NX+1,NY+1);
+  delete[] u_exact; 
+  Delete3DArray<double>(u0, NX+1,NY+1,2);
+  Delete2DArray<int>(flag, NX+1,NY+1);
 
   return 0;      
 } 
 
 
 
-void init() 
+void init(double gamma, double tau) 
 { 
   
   //------------------------------------------------
@@ -106,9 +176,9 @@ void init()
 
 
   //-----------------------------------These are for dt=a*dx^2
-  q_up=0.25;     //上边界的网格步长
+  q_up=gamma;    // gamma? //上边界的网格步长
   q_down=q_up;
-  SS=3.0;            //tau
+  SS=tau;            //tau
 
 
 
@@ -119,7 +189,7 @@ void init()
 
 
 
-  niu=0.003;
+  niu=0.003; //nu
   s_nu=-1.0/SS;
   s_q=-8.0*(2.0+s_nu)/(8.0+s_nu);             
   dt=(SS -0.5)/3.0 *dx*dx /niu;
@@ -142,9 +212,11 @@ void init()
 
 
 
+  if(verbose) {
   printf("s_nu=%f, s_q=%f \n",s_nu,s_q);
 
   printf("U/c=%f",U_max/c);
+  }
 
   //cout<<"tau_f= "<<tau_f<<endl; 
 
