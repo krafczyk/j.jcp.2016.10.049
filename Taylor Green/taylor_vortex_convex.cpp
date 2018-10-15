@@ -9,11 +9,15 @@
 #include<sstream> 
 #include<string> 
 #include<stdio.h> 
+#include "ArgParseStandalone.h"
+#include "utilities.h"
  
 using namespace std; 
 const int Q=9; 
-const int NX = 49; 
-const int NY = 49; 
+//const int NX = 49; 
+//const int NY = 49; 
+int NY=0; 
+int NX=0; 
 const double U=0.05; 
 const double pi=3.1415926;
 
@@ -38,7 +42,7 @@ void comput_q (int i, int j, int ip, int jp);
 
 
  
-void init(); 
+void init(double tau); 
 double feq(int k,double rho,double u[2]); 
 void evolution(); 
 void output(int m); 
@@ -48,13 +52,47 @@ int flag[NX+1][NY+1];
 
 // void outdata();
  
-int main() 
+int main(int argc, char** argv) 
 { 
   using namespace std; 
 
+  double tau = 0.;
+  int Ny = 0;
+  bool dump_solution_passed = false;
+  std::string solution_filepath;
+  bool header = false;
+
+  ArgParse::ArgParser Parser("Poiseuille Non Convex Simulation");
+  Parser.AddArgument("--tau", "Set the value for tau", &tau, ArgParse::Argument::Required);
+  Parser.AddArgument("--Ny", "Set the y resolution Ny", &Ny, ArgParse::Argument::Required);
+  Parser.AddArgument("--dump-solution", "Filepath to dump solution at.", &solution_filepath, ArgParse::Argument::Optional, &dump_solution_passed);
+  Parser.AddArgument("--header", "Whether or not to include column headers in the output", &header, ArgParse::Argument::Optional);
+  Parser.AddArgument("--verbose", "Whether to print extra stuff", &verbose, ArgParse::Argument::Optional);
+
+  if(Parser.ParseArgs(argc, argv) < 0) {
+	  printf("Problem parsing arguments!");
+	  return -1;
+  }
+
+  if(Parser.HelpPrinted()) {
+	  return 0;
+  }
+
+  NY = Ny;
+  NX = NY;
+
+  rho = New2DArray<double>(NX+1,NY+1); 
+  u = New3DArray<double>(NX+1,NY+1,2);
+  u0 = New3DArray<double>(NX+1,NY+1,2);
+  f = New3DArray<double>(NX+1,NY+1,Q);
+  ff = New3DArray<double>(NX+1,NY+1,Q);
+  F = New3DArray<double>(NX+1,NY+1,Q);
+  xlabel = New2DArray<double>(NX+1,NY+1);
+  ylabel = New2DArray<double>(NX+1,NY+1); 
+  flag = New2DArray<int>(NX+1,NY+1);
   
 
-  init();  //初始化
+  init(tau);  //初始化
 
 
   for(n=0; ;n++) 
@@ -67,11 +105,13 @@ int main()
 
 	if(n%100==0)
 	{
+		if(verbose) {
       cout<<"The"<<n<<"th computation result:"<<endl<<"The u,v of point (NX/2,NY/2)is : " 
      
       <<setprecision(6)<<u[NX/2][NY/2][0]<<","<<u[NX/2][NY/2][1]<<endl; 
       cout<<"The max relative error of uv is:" 
         <<setiosflags(ios::scientific)<<error<<endl; 
+		}
        
 	//  output(n);
         
@@ -80,21 +120,38 @@ int main()
 	if(n==int(1.0*Lx/U/dt)) 
 	{
         Error();
+        if (verbose) {
 		cout<<"The max relative error of uv is:" 
         <<setiosflags(ios::scientific)<<error<<endl; 
-
+	}
+	if(dump_solution_passed) {
 		output(n+1);
+	}
+        if(header) {
+          printf("\"Lattice Size\", \"NY\", \"Tau\", \"Error\"\n");
+       	}
+       	printf("%.14f, %i, %.14f, %.14f\n",dx, NY,tau,error);
 		break;
 	}
 
   } 
- 
+
+  Delete2DArray<double>(rho,NX+1,NY+1); 
+  Delete3DArray<double>(u,NX+1,NY+1,2);
+  Delete3DArray<double>(u0,NX+1,NY+1,2);
+  Delete3DArray<double>(f,NX+1,NY+1,Q);
+  Delete3DArray<double>(ff,NX+1,NY+1,Q);
+  Delete3DArray<double>(F,NX+1,NY+1,Q);
+  Delete2DArray<double>(xlabel,NX+1,NY+1);
+  Delete2DArray<double>(ylabel,NX+1,NY+1); 
+  Delete2DArray<int>(flag,NX+1,NY+1);
+
   return 0; 
 } 
 
 
 
-void init() 
+void init(double tau) 
 { 
   
   Lx=1.0; 
@@ -102,7 +159,7 @@ void init()
   dx=Lx/(NX+1); 
   dy=dx; 
   niu=0.002;
-  SS=1.0/1.5;                    //tau
+  SS=tau;                    //tau
   s_nu=-1.0/SS;
   //s_q = s_nu;
   s_q=8.0*(2+s_nu)/(8+7.0*s_nu); 
