@@ -27,3 +27,12 @@ Total: [1(1.5%)]@00:33:00
 
 01:00:00: Started process of adding arguments to programs
 01:56:00: Poiseuille nonconvex program now has arguments, need to script it. I also adjusted the output so it could be run several times in succession and create a .csv file.
+02:33:00: Building a script to use gnu parallel to execute all the experiments in a parallelized fashion
+03:39:00: Finished building script, it takes quite a while. maybe 12 hours with 4 threads? I'll need to time it. I've now finished the nonconvex plots in Figure 3. They all seem to match exactly.
+
+F3: (1*5)+(0*5)+(1*2)+(0*5)+(1*1)+(0*5)
+F4: (0*3)+(0*5)
+F5: (0*8)
+F6: (0*3)+(0*5)
+T1: (0*20)
+Total: [8(11.9%)]@03:39:00
