@@ -31,7 +31,7 @@ double R;  //Ô²°ë¾¶
 double ell=1.0;  //ÍÖÔ²²ÎÊı£¬¼´ell*(x-x0)^2+(y-y0)^2=R^2 , ell´óĞ¡¿ØÖÆ×ÅÍÖÔ²µÄ±âÆ½
 double s_nu,s_q,SS,cs_2;
 
-double abs( double i);
+//double abs( double i);
 void comput_q (int i, int j, int ip, int jp);
 
 
@@ -299,12 +299,12 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 
 
 
-double abs( double i)
-{
-	if(i>=0.0) return i;
-	else 
-		return -i;
-}
+//double abs( double i)
+//{
+//	if(i>=0.0) return i;
+//	else 
+//		return -i;
+//}
 
 
 
@@ -312,8 +312,8 @@ void comput_q (int i, int j, int ip, int jp)  //1±íÊ¾´óÓÚ0.5£¬-1±íÊ¾Ğ¡ÓÚ0.5,2ÎªÕ
 {
      if (ip==i)
 	 {   
-		 yy1  = abs( Center_y+sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
-		 yy2  = abs( Center_y-sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
+		 yy1  = fabs( Center_y+sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
+		 yy2  = fabs( Center_y-sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
 
 		 if(yy1<=yy2) q=yy1;
 		 else q=yy2;
@@ -328,8 +328,8 @@ void comput_q (int i, int j, int ip, int jp)  //1±íÊ¾´óÓÚ0.5£¬-1±íÊ¾Ğ¡ÓÚ0.5,2ÎªÕ
 
 		 cc  =  ( ell*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)+Center_x*Center_x-R*R  ) / (ell*kk*kk+1.0);  //×¢Òâderta>=0
 
-         x1  =  abs( (b+sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
-         x2  =  abs( (b-sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
+         x1  =  fabs( (b+sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
+         x2  =  fabs( (b-sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
 
 		 if(x1<=x2) q=x1;
 		 else q=x2;

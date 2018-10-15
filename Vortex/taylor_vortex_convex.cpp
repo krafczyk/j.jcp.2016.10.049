@@ -26,7 +26,14 @@ const double pi=3.1415926;
 int e[Q][2]={{0,0},{1,0},{0,1},{-1,0},{0,-1},{1,1},{-1,1},{-1,-1},{1,-1}};       //9¸ö·½Ïò
 int ne[Q]={0,3,4,1,2,7,8,5,6};                                                //ÓÃÓÚ±ê¼Ç·´·½Ïò
 double w[Q]={4.0/9,1.0/9,1.0/9,1.0/9,1.0/9,1.0/36,1.0/36,1.0/36,1.0/36}; 
-double rho[NX+1][NY+1],u[NX+1][NY+1][2],u0[NX+1][NY+1][2],f[NX+1][NY+1][Q],ff[NX+1][NY+1][Q],F[NX+1][NY+1][Q],xlabel[NX+1][NY+1],ylabel[NX+1][NY+1]; 
+double** rho = NULL;
+double*** u = NULL;
+double*** u0 = NULL;
+double*** f = NULL;
+double*** ff = NULL;
+double*** F = NULL;
+double** xlabel = NULL;
+double** ylabel = NULL;
 int i,j,k,ip,jp,n,q_flag; 
 double c,Re,dx,dy,Lx,Ly,D,dt,rho0,p0,tau_f,niu,error,y,yy1,yy2,kk,b,cc,x1,x2,x,q; 
 
@@ -35,7 +42,7 @@ double R;  //Ô²°ë¾¶
 double ell=1.0;  //ÍÖÔ²²ÎÊý£¬¼´ell*(x-x0)^2+(y-y0)^2=R^2 , ell¿ØÖÆÍÖÔ²µÄ±âÆ½
 double s_nu,s_q,SS,cs_2;
 
-double abs( double i);
+//double abs( double i);
 void comput_q (int i, int j, int ip, int jp);
 
 
@@ -47,7 +54,8 @@ double feq(int k,double rho,double u[2]);
 void evolution(); 
 void output(int m); 
 void Error(); 
-int flag[NX+1][NY+1];
+int** flag = NULL;
+bool verbose = false;
 
 
 // void outdata();
@@ -166,7 +174,9 @@ void init(double tau)
   dt=(SS -0.5)/3.0 *dx*dx /niu;
   c=dx/dt;
 
+  if(verbose) {
   cout<<"U/c = "<<U/c<<"\n";
+  }
 
 
 
@@ -231,6 +241,9 @@ double feq(int k,double rho,double u[2])   // ¼ÆËãÆ½ºâÌ¬·Ö²¼º¯Êý
   uv=(u[0]*u[0]+u[1]*u[1]); 
   //feq=w[k]*rho*(1.0+3.0*eu/c+4.5*eu*eu/c/c-1.5*uv/c/c); 
   feq=w[k]*(rho + rho0* (3.0*eu/c+4.5*eu*eu/c/c-1.5*uv/c/c) ); 
+  if(isinf(feq)) {
+	  std::cout << w[k] << " " << eu << " " << uv << " " << u[0] << " " << u[1] << std::endl;
+  }
   return feq; 
 } 
 
@@ -238,19 +251,41 @@ double feq(int k,double rho,double u[2])   // ¼ÆËãÆ½ºâÌ¬·Ö²¼º¯Êý
  
 void evolution() 
 { 
+	std::cout << "evolution" << std::endl;
 
 
   
 	 for(i=(NX+1)/4-3;i<=(NX+1)/4*3+3;i++) 
 		for(j=(NY+1)/4-3;j<=(NY+1)/4*3+3;j++) 
 		{
-			for(k=0;k<Q;k++) 
+			for(k=0;k<Q;k++)  {
+				bool thenan_before = false;
+				bool thenan_after = false;
+				if(isnan(F[i][j][k])) {
+					thenan_before = true;
+				}
 				F[i][j][k]=f[i][j][k]
 				           +
 				           s_nu*(  0.5*(f[i][j][k]+f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])+feq(ne[k],rho[i][j], u[i][j]))   )
 						   +
 				           s_q*(  0.5*(f[i][j][k]-f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])-feq(ne[k],rho[i][j], u[i][j]))   );    //Åö×²
-		
+			        if(isnan(F[i][j][k])) {
+				        thenan_after = true;
+				}	
+			        if((!thenan_before)&&(thenan_after)) {
+				        if(isnan(f[i][j][k])) {
+						std::cout << "condition met: first summation term" << std::endl;
+					}
+					if(isnan(s_nu*(  0.5*(f[i][j][k]+f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])+feq(ne[k],rho[i][j], u[i][j]))))) {
+						std::cout << "condition met: second summation term" << std::endl;
+					}
+					if(isnan(s_q*(  0.5*(f[i][j][k]-f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])-feq(ne[k],rho[i][j], u[i][j]))   ))) {
+						std::cout << "condition met: third summation term" << std::endl;
+						std::cout << "printing factors" << std::endl;
+						std::cout << s_q << " " << f[i][j][k] << " " << f[i][j][ne[k]] << " " << feq(k, rho[i][j], u[i][j]) << " " << feq(ne[k], rho[i][j], u[i][j]) << std::endl;
+					}
+				}
+			}
 
 		}
 	
@@ -261,7 +296,6 @@ void evolution()
 for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++) 
 		for(j=(NY+1)/4-3;   j<=(NY+1)/4*3+3;  j++) 
 			{
-
 			if(flag[i][j]==1)
 			{
 				for(k=0;k<Q;k++) 
@@ -269,7 +303,6 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 					ip=i-e[k][0]; 
 					jp=j-e[k][1];
 				
-
 					if( flag[i][j]==1 && flag[ip][jp]==0 )
 					{
 					   
@@ -322,11 +355,25 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
           { 
             f[i][j][k] = ff[i][j][k];
             rho[i][j]+=f[i][j][k]; 
+            if(isnan(e[k][0])) {
+		    std::cout << "e[" << k << "][0] is nan!" << std::endl;
+	    }
+            if(isnan(e[k][1])) {
+		    std::cout << "e[" << k << "][1] is nan!" << std::endl;
+	    }
+            if(isnan(f[i][j][k])) {
+		    std::cout << "f[" << i << "][" << j << "][" << k << "] is nan!" << std::endl;
+	    }
             u[i][j][0]+=c*e[k][0]*f[i][j][k]; 
             u[i][j][1]+=c*e[k][1]*f[i][j][k]; 
           } 
 
-
+	if(isnan(u[i][j][0])) {
+		std::cout << "u[" << i << "][" << j << "][0] is nan!" << std::endl;
+	}
+	if(isnan(u[i][j][1])) {
+		std::cout << "u[" << i << "][" << j << "][1] is nan!" << std::endl;
+	}
           //u[i][j][0]/=rho[i][j]; 
           //u[i][j][1]/=rho[i][j]; 
 
@@ -342,12 +389,12 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 
 
 
-double abs( double i)
-{
-	if(i>=0.0) return i;
-	else 
-		return -i;
-}
+//double abs( double i)
+//{
+//	if(i>=0.0) return i;
+//	else 
+//		return -i;
+//}
 
 
 
@@ -355,8 +402,8 @@ void comput_q (int i, int j, int ip, int jp)  //1±íÊ¾´óÓÚ0.5£¬-1±íÊ¾Ð¡ÓÚ0.5,2ÎªÕ
 {
      if (ip==i)
 	 {   
-		 yy1  = abs( Center_y+sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
-		 yy2  = abs( Center_y-sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
+		 yy1  = fabs( Center_y+sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
+		 yy2  = fabs( Center_y-sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
 
 		 if(yy1<=yy2) q=yy1;
 		 else q=yy2;
@@ -371,8 +418,8 @@ void comput_q (int i, int j, int ip, int jp)  //1±íÊ¾´óÓÚ0.5£¬-1±íÊ¾Ð¡ÓÚ0.5,2ÎªÕ
 
 		 cc  =  ( ell*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)+Center_x*Center_x-R*R  ) / (ell*kk*kk+1.0);  
 
-         x1  =  abs( (b+sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
-         x2  =  abs( (b-sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
+         x1  =  fabs( (b+sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
+         x2  =  fabs( (b-sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
 
 		 if(x1<=x2) q=x1;
 		 else q=x2;
@@ -429,6 +476,10 @@ void comput_q (int i, int j, int ip, int jp)  //1±íÊ¾´óÓÚ0.5£¬-1±íÊ¾Ð¡ÓÚ0.5,2ÎªÕ
 			}
 
 
+	  std::cout<< "NX: " << NX << std::endl;
+	  std::cout << "NY: " << NY << std::endl;
+	  std::cout << "temp1: " << temp1 << std::endl;
+	  std::cout << "temp2: " << temp2 << std::endl;
             temp1=sqrt(temp1); 
             temp2=sqrt(temp2); 
             error=temp1/(temp2+1e-30); 
