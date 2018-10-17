@@ -2,3 +2,4 @@
 *.swo
 *.dat
 *.png
+bin/*
