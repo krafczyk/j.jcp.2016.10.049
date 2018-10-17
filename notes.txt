@@ -39,3 +39,11 @@ Total: [8(11.9%)]@03:39:00
 
 06:13:00: Trying to fix the taylor vortex problem, but I've run into a nan issue. I'm assuming for now that there is a change I made somewhere which resulted in this nan, but I need to study and fix the issue.
 07:14:00: I've found that the solution is becoming singular... I'll have to think about how to solve this.
+08:01:00: The jobs for Figure3 convex equation finished. They took nearly 2 days to finish running. I've now perfectly replicated Figure 3.
+
+F3: (1*5)+(1*5)+(1*2)+(1*5)+(1*1)+(1*5)
+F4: (0*3)+(0*5)
+F5: (0*8)
+F6: (0*3)+(0*5)
+T1: (0*20)
+Total: [23(34.3%)]@08:01:00
