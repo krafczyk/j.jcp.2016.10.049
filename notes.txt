@@ -47,3 +47,8 @@ F5: (0*8)
 F6: (0*3)+(0*5)
 T1: (0*20)
 Total: [23(34.3%)]@08:01:00
+
+08:06:00: The Couette flow example is also plagued by nan and inf issues. Its possible that this is related to the stability of the problem. I'm double checking the set parameters to make sure everything is set properly.
+08:10:00: I've started reading the article in depth to understand how to properly debug the inf/nan issues I'm seeing with the second two examples.
+08:48:00: I may have discovered an error in the Couette example. s_q seems to be defined incorrectly, however the correct definition is just commented out above. Maybe some experimentation by the author?
+08:54:00: This isn't the only problem because I'm still getting nan problems. Also when I reduce the lattice size to 11, the program segfaults.
