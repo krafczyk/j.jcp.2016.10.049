@@ -1,4 +1,4 @@
-// Taylor Green vortex flow, nonconvex scheme
+// Taylor Green vortex flow, convex scheme
 
 
 #include<iostream> 
@@ -9,11 +9,15 @@
 #include<sstream> 
 #include<string> 
 #include<stdio.h> 
+#include "ArgParseStandalone.h"
+#include "utilities.h"
  
 using namespace std; 
 const int Q=9; 
-const int NX = 39; 
-const int NY = 39; 
+//const int NX = 49; 
+//const int NY = 49; 
+int NY=0; 
+int NX=0; 
 const double U=0.05; 
 const double pi=3.1415926;
 
@@ -22,39 +26,81 @@ const double pi=3.1415926;
 int e[Q][2]={{0,0},{1,0},{0,1},{-1,0},{0,-1},{1,1},{-1,1},{-1,-1},{1,-1}};       //9∏ˆ∑ΩœÚ
 int ne[Q]={0,3,4,1,2,7,8,5,6};                                                //”√”⁄±Íº«∑¥∑ΩœÚ
 double w[Q]={4.0/9,1.0/9,1.0/9,1.0/9,1.0/9,1.0/36,1.0/36,1.0/36,1.0/36}; 
-double rho[NX+1][NY+1],u[NX+1][NY+1][2],u0[NX+1][NY+1][2],f[NX+1][NY+1][Q],ff[NX+1][NY+1][Q],F[NX+1][NY+1][Q],xlabel[NX+1][NY+1],ylabel[NX+1][NY+1]; 
+double** rho = NULL;
+double*** u = NULL;
+double*** u0 = NULL;
+double*** f = NULL;
+double*** ff = NULL;
+double*** F = NULL;
+double** xlabel = NULL;
+double** ylabel = NULL;
 int i,j,k,ip,jp,n,q_flag; 
 double c,Re,dx,dy,Lx,Ly,D,dt,rho0,p0,tau_f,niu,error,y,yy1,yy2,kk,b,cc,x1,x2,x,q; 
 
 double iq,jq,AA,BB,CC,DD,EE,rr,uu,vv,Center_x,Center_y;
 double R;  //‘≤∞Îæ∂ 
-double ell=1.0;  //Õ÷‘≤≤Œ ˝£¨º¥ell*(x-x0)^2+(y-y0)^2=R^2 , ell¥Û–°øÿ÷∆◊≈Õ÷‘≤µƒ±‚∆Ω
+double ell=1.0;  //Õ÷‘≤≤Œ ˝£¨º¥ell*(x-x0)^2+(y-y0)^2=R^2 , elløÿ÷∆Õ÷‘≤µƒ±‚∆Ω
 double s_nu,s_q,SS,cs_2;
 
-double abs( double i);
+//double abs( double i);
 void comput_q (int i, int j, int ip, int jp);
 
 
 
 
  
-void init(); 
+void init(double tau); 
 double feq(int k,double rho,double u[2]); 
 void evolution(); 
 void output(int m); 
 void Error(); 
-int flag[NX+1][NY+1];
+int** flag = NULL;
+bool verbose = false;
 
 
 // void outdata();
  
-int main() 
+int main(int argc, char** argv) 
 { 
   using namespace std; 
 
+  double tau = 0.;
+  int Ny = 0;
+  bool dump_solution_passed = false;
+  std::string solution_filepath;
+  bool header = false;
+
+  ArgParse::ArgParser Parser("Poiseuille Non Convex Simulation");
+  Parser.AddArgument("--tau", "Set the value for tau", &tau, ArgParse::Argument::Required);
+  Parser.AddArgument("--Ny", "Set the y resolution Ny", &Ny, ArgParse::Argument::Required);
+  Parser.AddArgument("--dump-solution", "Filepath to dump solution at.", &solution_filepath, ArgParse::Argument::Optional, &dump_solution_passed);
+  Parser.AddArgument("--header", "Whether or not to include column headers in the output", &header, ArgParse::Argument::Optional);
+  Parser.AddArgument("--verbose", "Whether to print extra stuff", &verbose, ArgParse::Argument::Optional);
+
+  if(Parser.ParseArgs(argc, argv) < 0) {
+	  printf("Problem parsing arguments!");
+	  return -1;
+  }
+
+  if(Parser.HelpPrinted()) {
+	  return 0;
+  }
+
+  NY = Ny;
+  NX = NY;
+
+  rho = New2DArray<double>(NX+1,NY+1); 
+  u = New3DArray<double>(NX+1,NY+1,2);
+  u0 = New3DArray<double>(NX+1,NY+1,2);
+  f = New3DArray<double>(NX+1,NY+1,Q);
+  ff = New3DArray<double>(NX+1,NY+1,Q);
+  F = New3DArray<double>(NX+1,NY+1,Q);
+  xlabel = New2DArray<double>(NX+1,NY+1);
+  ylabel = New2DArray<double>(NX+1,NY+1); 
+  flag = New2DArray<int>(NX+1,NY+1);
   
 
-  init();  //≥ı ºªØ
+  init(tau);  //≥ı ºªØ
 
 
   for(n=0; ;n++) 
@@ -67,37 +113,53 @@ int main()
 
 	if(n%100==0)
 	{
+		if(verbose) {
       cout<<"The"<<n<<"th computation result:"<<endl<<"The u,v of point (NX/2,NY/2)is : " 
      
       <<setprecision(6)<<u[NX/2][NY/2][0]<<","<<u[NX/2][NY/2][1]<<endl; 
       cout<<"The max relative error of uv is:" 
         <<setiosflags(ios::scientific)<<error<<endl; 
+		}
        
-	//  output(n);// outdata();
+	//  output(n);
         
 	} 
-
-//	if(n%1000==0)  
-//		output(n);
 
 	if(n==int(1.0*Lx/U/dt)) 
 	{
         Error();
+        if (verbose) {
 		cout<<"The max relative error of uv is:" 
         <<setiosflags(ios::scientific)<<error<<endl; 
-
+	}
+	if(dump_solution_passed) {
 		output(n+1);
+	}
+        if(header) {
+          printf("\"Lattice Size\", \"NY\", \"Tau\", \"Error\"\n");
+       	}
+       	printf("%.14f, %i, %.14f, %.14f\n",dx, NY,tau,error);
 		break;
 	}
 
   } 
- 
+
+  Delete2DArray<double>(rho,NX+1,NY+1); 
+  Delete3DArray<double>(u,NX+1,NY+1,2);
+  Delete3DArray<double>(u0,NX+1,NY+1,2);
+  Delete3DArray<double>(f,NX+1,NY+1,Q);
+  Delete3DArray<double>(ff,NX+1,NY+1,Q);
+  Delete3DArray<double>(F,NX+1,NY+1,Q);
+  Delete2DArray<double>(xlabel,NX+1,NY+1);
+  Delete2DArray<double>(ylabel,NX+1,NY+1); 
+  Delete2DArray<int>(flag,NX+1,NY+1);
+
   return 0; 
 } 
 
 
 
-void init() 
+void init(double tau) 
 { 
   
   Lx=1.0; 
@@ -105,14 +167,16 @@ void init()
   dx=Lx/(NX+1); 
   dy=dx; 
   niu=0.002;
-  SS=3.0;                    //tau
+  SS=tau;                    //tau
   s_nu=-1.0/SS;
-  s_q = s_nu;
-  //s_q=-8.0*(2+s_nu)/(8+s_nu);             
+  //s_q = s_nu;
+  s_q=8.0*(2+s_nu)/(8+7.0*s_nu); 
   dt=(SS -0.5)/3.0 *dx*dx /niu;
   c=dx/dt;
 
+  if(verbose) {
   cout<<"U/c = "<<U/c<<"\n";
+  }
 
 
 
@@ -146,8 +210,7 @@ void init()
 		  }
 
 	  }
-
-
+  
  
   for(i=0;i<=NX;i++)    //ÀŸ∂»≥ı ºªØ
     for(j=0;j<=NY;j++) 
@@ -178,6 +241,9 @@ double feq(int k,double rho,double u[2])   // º∆À„∆Ω∫‚Ã¨∑÷≤º∫Ø ˝
   uv=(u[0]*u[0]+u[1]*u[1]); 
   //feq=w[k]*rho*(1.0+3.0*eu/c+4.5*eu*eu/c/c-1.5*uv/c/c); 
   feq=w[k]*(rho + rho0* (3.0*eu/c+4.5*eu*eu/c/c-1.5*uv/c/c) ); 
+  if(isinf(feq)) {
+	  std::cout << w[k] << " " << eu << " " << uv << " " << u[0] << " " << u[1] << std::endl;
+  }
   return feq; 
 } 
 
@@ -185,19 +251,41 @@ double feq(int k,double rho,double u[2])   // º∆À„∆Ω∫‚Ã¨∑÷≤º∫Ø ˝
  
 void evolution() 
 { 
+	std::cout << "evolution" << std::endl;
 
 
   
 	 for(i=(NX+1)/4-3;i<=(NX+1)/4*3+3;i++) 
 		for(j=(NY+1)/4-3;j<=(NY+1)/4*3+3;j++) 
 		{
-			for(k=0;k<Q;k++) 
+			for(k=0;k<Q;k++)  {
+				bool thenan_before = false;
+				bool thenan_after = false;
+				if(isnan(F[i][j][k])) {
+					thenan_before = true;
+				}
 				F[i][j][k]=f[i][j][k]
 				           +
 				           s_nu*(  0.5*(f[i][j][k]+f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])+feq(ne[k],rho[i][j], u[i][j]))   )
 						   +
 				           s_q*(  0.5*(f[i][j][k]-f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])-feq(ne[k],rho[i][j], u[i][j]))   );    //≈ˆ◊≤
-		
+			        if(isnan(F[i][j][k])) {
+				        thenan_after = true;
+				}	
+			        if((!thenan_before)&&(thenan_after)) {
+				        if(isnan(f[i][j][k])) {
+						std::cout << "condition met: first summation term" << std::endl;
+					}
+					if(isnan(s_nu*(  0.5*(f[i][j][k]+f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])+feq(ne[k],rho[i][j], u[i][j]))))) {
+						std::cout << "condition met: second summation term" << std::endl;
+					}
+					if(isnan(s_q*(  0.5*(f[i][j][k]-f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])-feq(ne[k],rho[i][j], u[i][j]))   ))) {
+						std::cout << "condition met: third summation term" << std::endl;
+						std::cout << "printing factors" << std::endl;
+						std::cout << s_q << " " << f[i][j][k] << " " << f[i][j][ne[k]] << " " << feq(k, rho[i][j], u[i][j]) << " " << feq(ne[k], rho[i][j], u[i][j]) << std::endl;
+					}
+				}
+			}
 
 		}
 	
@@ -208,7 +296,6 @@ void evolution()
 for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++) 
 		for(j=(NY+1)/4-3;   j<=(NY+1)/4*3+3;  j++) 
 			{
-
 			if(flag[i][j]==1)
 			{
 				for(k=0;k<Q;k++) 
@@ -216,24 +303,13 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 					ip=i-e[k][0]; 
 					jp=j-e[k][1];
 				
-
 					if( flag[i][j]==1 && flag[ip][jp]==0 )
 					{
 					   
 						comput_q(i,j,ip,jp);
-						//cout<<q<<endl;
-					
-					   
-
-					   //cout<<"q="<<q/dx<<endl;
 
 					   iq=xlabel[i][j]-q*double(e[k][0]);
 					   jq=ylabel[i][j]-q*double(e[k][1]);
-
-					   //cout<<"xlabel="<<xlabel[i][j]<<"ylabel="<<ylabel[i][j]<<endl;
-
-
-					   //cout<<"iq="<<iq<<"jq="<<jq<<endl;
 
 					    
 					    rr= rho0 - 3.0*U*U/4.0/c/c*( cos(iq*4.0*pi)+cos(jq*4.0*pi) )*exp(-16.0*niu*pi*pi*(n)*dt) ;
@@ -245,12 +321,12 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 
 						q=q/dx;
 
-						
-                        AA= 2.0*q;
-						BB = 1.0-AA;
-						CC = 2.0;
 
-						ff[i][j][k] = AA*F[i][j][ne[k]] +BB*f[i][j][ne[k]] + CC*w[k]*rho0*3.0/c*(e[k][0]*uu+e[k][1]*vv);
+                        AA= 2.0*q/(1.0+2.0*q);
+						BB = 1.0-AA;
+						CC = 1.0-AA+BB;
+
+						ff[i][j][k] = AA*F[i][j][k] +BB*f[i][j][ne[k]] + CC*w[k]*rho0*3.0/c*(e[k][0]*uu+e[k][1]*vv);
 
 					}
 					
@@ -279,11 +355,25 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
           { 
             f[i][j][k] = ff[i][j][k];
             rho[i][j]+=f[i][j][k]; 
+            if(isnan(e[k][0])) {
+		    std::cout << "e[" << k << "][0] is nan!" << std::endl;
+	    }
+            if(isnan(e[k][1])) {
+		    std::cout << "e[" << k << "][1] is nan!" << std::endl;
+	    }
+            if(isnan(f[i][j][k])) {
+		    std::cout << "f[" << i << "][" << j << "][" << k << "] is nan!" << std::endl;
+	    }
             u[i][j][0]+=c*e[k][0]*f[i][j][k]; 
             u[i][j][1]+=c*e[k][1]*f[i][j][k]; 
           } 
 
-
+	if(isnan(u[i][j][0])) {
+		std::cout << "u[" << i << "][" << j << "][0] is nan!" << std::endl;
+	}
+	if(isnan(u[i][j][1])) {
+		std::cout << "u[" << i << "][" << j << "][1] is nan!" << std::endl;
+	}
           //u[i][j][0]/=rho[i][j]; 
           //u[i][j][1]/=rho[i][j]; 
 
@@ -299,12 +389,12 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 
 
 
-double abs( double i)
-{
-	if(i>=0.0) return i;
-	else 
-		return -i;
-}
+//double abs( double i)
+//{
+//	if(i>=0.0) return i;
+//	else 
+//		return -i;
+//}
 
 
 
@@ -312,8 +402,8 @@ void comput_q (int i, int j, int ip, int jp)  //1±Ì æ¥Û”⁄0.5£¨-1±Ì æ–°”⁄0.5,2Œ™’
 {
      if (ip==i)
 	 {   
-		 yy1  = abs( Center_y+sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
-		 yy2  = abs( Center_y-sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
+		 yy1  = fabs( Center_y+sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
+		 yy2  = fabs( Center_y-sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
 
 		 if(yy1<=yy2) q=yy1;
 		 else q=yy2;
@@ -326,10 +416,10 @@ void comput_q (int i, int j, int ip, int jp)  //1±Ì æ¥Û”⁄0.5£¨-1±Ì æ–°”⁄0.5,2Œ™’
 		 
 		 b   =  (  2.0*Center_x - 2.0*ell*kk*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)  ) / (ell*kk*kk+1.0);
 
-		 cc  =  ( ell*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)+Center_x*Center_x-R*R  ) / (ell*kk*kk+1.0);  //◊¢“‚derta>=0
+		 cc  =  ( ell*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)+Center_x*Center_x-R*R  ) / (ell*kk*kk+1.0);  
 
-         x1  =  abs( (b+sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
-         x2  =  abs( (b-sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
+         x1  =  fabs( (b+sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
+         x2  =  fabs( (b-sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
 
 		 if(x1<=x2) q=x1;
 		 else q=x2;
@@ -386,6 +476,10 @@ void comput_q (int i, int j, int ip, int jp)  //1±Ì æ¥Û”⁄0.5£¨-1±Ì æ–°”⁄0.5,2Œ™’
 			}
 
 
+	  std::cout<< "NX: " << NX << std::endl;
+	  std::cout << "NY: " << NY << std::endl;
+	  std::cout << "temp1: " << temp1 << std::endl;
+	  std::cout << "temp2: " << temp2 << std::endl;
             temp1=sqrt(temp1); 
             temp2=sqrt(temp2); 
             error=temp1/(temp2+1e-30); 

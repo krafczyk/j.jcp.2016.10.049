@@ -1,4 +1,4 @@
-// Taylor Green vortex flow, convex scheme
+// Taylor Green vortex flow, nonconvex scheme
 
 
 #include<iostream> 
@@ -12,8 +12,8 @@
  
 using namespace std; 
 const int Q=9; 
-const int NX = 49; 
-const int NY = 49; 
+const int NX = 39; 
+const int NY = 39; 
 const double U=0.05; 
 const double pi=3.1415926;
 
@@ -28,10 +28,10 @@ double c,Re,dx,dy,Lx,Ly,D,dt,rho0,p0,tau_f,niu,error,y,yy1,yy2,kk,b,cc,x1,x2,x,q
 
 double iq,jq,AA,BB,CC,DD,EE,rr,uu,vv,Center_x,Center_y;
 double R;  //Ô²°ë¾¶ 
-double ell=1.0;  //ÍÖÔ²²ÎÊı£¬¼´ell*(x-x0)^2+(y-y0)^2=R^2 , ell¿ØÖÆÍÖÔ²µÄ±âÆ½
+double ell=1.0;  //ÍÖÔ²²ÎÊı£¬¼´ell*(x-x0)^2+(y-y0)^2=R^2 , ell´óĞ¡¿ØÖÆ×ÅÍÖÔ²µÄ±âÆ½
 double s_nu,s_q,SS,cs_2;
 
-double abs( double i);
+//double abs( double i);
 void comput_q (int i, int j, int ip, int jp);
 
 
@@ -73,9 +73,12 @@ int main()
       cout<<"The max relative error of uv is:" 
         <<setiosflags(ios::scientific)<<error<<endl; 
        
-	//  output(n);
+	//  output(n);// outdata();
         
 	} 
+
+//	if(n%1000==0)  
+//		output(n);
 
 	if(n==int(1.0*Lx/U/dt)) 
 	{
@@ -102,10 +105,10 @@ void init()
   dx=Lx/(NX+1); 
   dy=dx; 
   niu=0.002;
-  SS=1.0/1.5;                    //tau
+  SS=3.0;                    //tau
   s_nu=-1.0/SS;
-  //s_q = s_nu;
-  s_q=8.0*(2+s_nu)/(8+7.0*s_nu); 
+  s_q = s_nu;
+  //s_q=-8.0*(2+s_nu)/(8+s_nu);             
   dt=(SS -0.5)/3.0 *dx*dx /niu;
   c=dx/dt;
 
@@ -143,7 +146,8 @@ void init()
 		  }
 
 	  }
-  
+
+
  
   for(i=0;i<=NX;i++)    //ËÙ¶È³õÊ¼»¯
     for(j=0;j<=NY;j++) 
@@ -217,9 +221,19 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 					{
 					   
 						comput_q(i,j,ip,jp);
+						//cout<<q<<endl;
+					
+					   
+
+					   //cout<<"q="<<q/dx<<endl;
 
 					   iq=xlabel[i][j]-q*double(e[k][0]);
 					   jq=ylabel[i][j]-q*double(e[k][1]);
+
+					   //cout<<"xlabel="<<xlabel[i][j]<<"ylabel="<<ylabel[i][j]<<endl;
+
+
+					   //cout<<"iq="<<iq<<"jq="<<jq<<endl;
 
 					    
 					    rr= rho0 - 3.0*U*U/4.0/c/c*( cos(iq*4.0*pi)+cos(jq*4.0*pi) )*exp(-16.0*niu*pi*pi*(n)*dt) ;
@@ -231,12 +245,12 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 
 						q=q/dx;
 
-
-                        AA= 2.0*q/(1.0+2.0*q);
+						
+                        AA= 2.0*q;
 						BB = 1.0-AA;
-						CC = 1.0-AA+BB;
+						CC = 2.0;
 
-						ff[i][j][k] = AA*F[i][j][k] +BB*f[i][j][ne[k]] + CC*w[k]*rho0*3.0/c*(e[k][0]*uu+e[k][1]*vv);
+						ff[i][j][k] = AA*F[i][j][ne[k]] +BB*f[i][j][ne[k]] + CC*w[k]*rho0*3.0/c*(e[k][0]*uu+e[k][1]*vv);
 
 					}
 					
@@ -285,12 +299,12 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 
 
 
-double abs( double i)
-{
-	if(i>=0.0) return i;
-	else 
-		return -i;
-}
+//double abs( double i)
+//{
+//	if(i>=0.0) return i;
+//	else 
+//		return -i;
+//}
 
 
 
@@ -298,8 +312,8 @@ void comput_q (int i, int j, int ip, int jp)  //1±íÊ¾´óÓÚ0.5£¬-1±íÊ¾Ğ¡ÓÚ0.5,2ÎªÕ
 {
      if (ip==i)
 	 {   
-		 yy1  = abs( Center_y+sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
-		 yy2  = abs( Center_y-sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
+		 yy1  = fabs( Center_y+sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
+		 yy2  = fabs( Center_y-sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
 
 		 if(yy1<=yy2) q=yy1;
 		 else q=yy2;
@@ -312,10 +326,10 @@ void comput_q (int i, int j, int ip, int jp)  //1±íÊ¾´óÓÚ0.5£¬-1±íÊ¾Ğ¡ÓÚ0.5,2ÎªÕ
 		 
 		 b   =  (  2.0*Center_x - 2.0*ell*kk*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)  ) / (ell*kk*kk+1.0);
 
-		 cc  =  ( ell*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)+Center_x*Center_x-R*R  ) / (ell*kk*kk+1.0);  
+		 cc  =  ( ell*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)+Center_x*Center_x-R*R  ) / (ell*kk*kk+1.0);  //×¢Òâderta>=0
 
-         x1  =  abs( (b+sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
-         x2  =  abs( (b-sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
+         x1  =  fabs( (b+sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
+         x2  =  fabs( (b-sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
 
 		 if(x1<=x2) q=x1;
 		 else q=x2;
