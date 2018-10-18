@@ -52,3 +52,13 @@ Total: [23(34.3%)]@08:01:00
 08:10:00: I've started reading the article in depth to understand how to properly debug the inf/nan issues I'm seeing with the second two examples.
 08:48:00: I may have discovered an error in the Couette example. s_q seems to be defined incorrectly, however the correct definition is just commented out above. Maybe some experimentation by the author?
 08:54:00: This isn't the only problem because I'm still getting nan problems. Also when I reduce the lattice size to 11, the program segfaults.
+09:31:00: The mysterious variable 'ell' is likely ellipticity of the domain.
+09:34:00: It seems while the taylor green vortex appears to only concern the circular region dicussed in the paper, wikipedia says it's solved in a square domain. It's possible the error summation is only over the circular region.
+10:45:00: In order to gain insight into the program I've embarked on an effort to translate some mojibaked comments in the source code. Working with my officemate we discovered that the encoding was probably 'utf-16-be'. Using the bvi hex editor I managed to extract the bytes for the mojibaked text. Then using python, I was able to load those bytes from a file, and decode them with the correct encoding. The function definition is this essentially:
+
+def fix_mojibake(filepath, encoding='utf-16-be'):
+	with open(filepath, "rb") as thefile:
+		data = thefile.read()
+	print(data.decode(encoding))
+
+The correctly encoded text is a mixture of korean and chinese characters, mostly korean. I put the text into google translate which correctly identified the language, but didn't give me any translation. I've sent this text to a family friend of mine who knows korean and has phd training in physics. She will be able to tell if 1) It's gibberish indicating the encoding is still incorrect, or 2) It's technical language which google isn't able to understand. in which case she'll be able to provide a translation of these comments.
