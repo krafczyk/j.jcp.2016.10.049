@@ -1,0 +1,53 @@
+q_up=1.0;     //짏뇟뷧뗄췸룱늽뎤
+
+poiseuille ꎬ nonconvex scheme
+
+int e[Q][2]={{0,0},{1,0},{0,1},{-1,0},{0,-1},{1,1},{-1,1},{-1,-1},{1,-1}}; //9룶랽쿲
+
+int ne[Q]={0,3,4,1,2,7,8,5,6}; //폃폚뇪볇랴랽쿲
+
+double R;  //敲役㬍
+
+double ell=1.0:  //췖풲닎쫽ꎬ벴ell*(x-x0)^2+(y-y0)^2=R^2 , ell뿘훆췖풲뗄뇢욽
+
+init();  //돵쪼뮯
+
+R=Lx/4.0;  // 풲냫뺶
+
+for(i=0;i<=NX;i++)    //룱뗣ퟸ뇪
+
+for (i=0;i<=NX;i++)    //뛔flag뷸탐뢳횵ꎬ붫룱뗣럖샠
+
+flag[i][j]=0;           //쓚늿쇷쳥뷚뗣
+
+if( (  ell*(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x) + (ylabel[i][j]-Center_y)*(ylabel[i][j]-Center_y) ) < R*R )//풲쓚늿
+
+for(i=0;i<=NX;i++)    //쯙뛈돵쪼뮯
+
+} //뷡쫸돵쪼뮯
+
+double feq(int k,double rho,double u[2])   // 볆쯣욽뫢첬럖늼몯쫽
+
+s_q*(  0.5*(f[i][j][k]-f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])-feq(ne[k],rho[i][j], u[i][j]))   );    //엶ힲ
+
+void comput_q (int i, int j, int ip, int jp)  //1뇭쪾듳폚0.5ꎬ-1뇭쪾킡폚0.5,2캪헽뎣룱뗣
+
+void output(int m)    //쫤돶
+
+void Error()   //볆쯣쿠뛔컳닮
+
+double ell=1.0:  //췖풲닎쫽ꎬ벴ell*(x-x0)^2+(y-y0)^2=R^2 , ell듳킡뿘훆ퟅ췖풲뗄뇢욽
+
+cc  =  ( ell*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)+Center_x*Center_x-R*R  ) / (ell*kk*kk+1.0);  //힢틢derta>=0
+
+flag[i][j]=0;           // R1쓚늿캪0
+
+flag[i][j]=1;      //뮷쓚늿캪1
+
+flag[i][j] = 2;   //R2췢쏦캪2
+
+comput_q(ip,jp,i,j,R1);   //쟳뗄쫇(ip,jp)떽풰뇟뷧뗄뻠샫
+
+comput_q(i,j,ip,jp,R2);   //쟳뗄쫇(i,j)떽풲뇟뷧뗄뻠샫
+
+q = q/dx;     //뗃떽쇋(i,j)떽풲뇟뷧뗄뻠샫ꎬ헢쫇탨튪뗄
