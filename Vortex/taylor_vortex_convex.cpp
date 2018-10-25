@@ -14,8 +14,6 @@
  
 using namespace std; 
 const int Q=9; 
-//const int NX = 49; 
-//const int NY = 49; 
 int NY=0; 
 int NX=0; 
 const double U=0.05; 
