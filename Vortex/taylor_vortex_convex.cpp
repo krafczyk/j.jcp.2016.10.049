@@ -23,8 +23,8 @@ const double pi=3.1415926;
 
 
  
-int e[Q][2]={{0,0},{1,0},{0,1},{-1,0},{0,-1},{1,1},{-1,1},{-1,-1},{1,-1}};       //9¸ö·½Ïò
-int ne[Q]={0,3,4,1,2,7,8,5,6};                                                //ÓÃÓÚ±ê¼Ç·´·½Ïò
+int e[Q][2]={{0,0},{1,0},{0,1},{-1,0},{0,-1},{1,1},{-1,1},{-1,-1},{1,-1}};       //9 directions
+int ne[Q]={0,3,4,1,2,7,8,5,6};                                                //back directions
 double w[Q]={4.0/9,1.0/9,1.0/9,1.0/9,1.0/9,1.0/36,1.0/36,1.0/36,1.0/36}; 
 double** rho = NULL;
 double*** u = NULL;
@@ -38,8 +38,8 @@ int i,j,k,ip,jp,n,q_flag;
 double c,Re,dx,dy,Lx,Ly,D,dt,rho0,p0,tau_f,niu,error,y,yy1,yy2,kk,b,cc,x1,x2,x,q; 
 
 double iq,jq,AA,BB,CC,DD,EE,rr,uu,vv,Center_x,Center_y;
-double R;  //Ô²°ë¾¶ 
-double ell=1.0;  //ÍÖÔ²²ÎÊý£¬¼´ell*(x-x0)^2+(y-y0)^2=R^2 , ell¿ØÖÆÍÖÔ²µÄ±âÆ½
+double R;  //radius of the circle 
+double ell=1.0;  // a parameter to control the shape of the boundary: ell*(x-x0)^2+(y-y0)^2=R^2, ell=1 for circle
 double s_nu,s_q,SS,cs_2;
 
 //double abs( double i);
@@ -100,7 +100,7 @@ int main(int argc, char** argv)
   flag = New2DArray<int>(NX+1,NY+1);
   
 
-  init(tau);  //³õÊ¼»¯
+  init(tau);  //initiate
 
 
   for(n=0; ;n++) 
@@ -171,7 +171,8 @@ void init(double tau)
   s_nu=-1.0/SS;
   //s_q = s_nu;
   //s_q=8.0*(2+s_nu)/(8+7.0*s_nu); 
-  s_q=8.0*(2+s_nu)/(8+s_nu); 
+  //s_q=8.0*(2+s_nu)/(8+s_nu); 
+  s_q=-8.0*(2+s_nu)/(8+s_nu);             
   dt=(SS -0.5)/3.0 *dx*dx /niu;
   c=dx/dt;
 
@@ -182,23 +183,23 @@ void init(double tau)
 
 
 
-  R=Lx/4.0;  // Ô²°ë¾¶  
+  R=Lx/4.0;  // radius 
   rho0=1.0;
   cs_2=c*c/3.0;
   
-  for(i=0;i<=NX;i++)    //¸ñµã×ø±ê
+  for(i=0;i<=NX;i++)    //corrdinates of the lattice nodes
   for(j=0;j<=NY;j++) 
   {
 	  xlabel[i][j]=i*dx+0.5*dx;
 	  ylabel[i][j]=j*dy+0.5*dy;
 
   }
-  Center_x=Lx/2.0;
+  Center_x=Lx/2.0; //the centre of the circle
   Center_y=Ly/2.0;
 
   
 
-  for (i=0;i<=NX;i++)    //¶Ôflag½øÐÐ¸³Öµ£¬½«¸ñµã·ÖÀà
+  for (i=0;i<=NX;i++)    //tag different lattice nodes
 	  for (j=0;j<=NY;j++)
 	  {
 		  flag[i][j]=0;           //ÄÚ²¿Á÷Ìå½Úµã
@@ -206,14 +207,14 @@ void init(double tau)
 		  if( (  ell*(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x) + (ylabel[i][j]-Center_y)*(ylabel[i][j]-Center_y) ) < R*R )//Ô²ÄÚ²¿
 		  {
 			 
-		        flag[i][j]=1;	  
+		        flag[i][j]=1;	  //internal fluid lattice nodes
 
 		  }
 
 	  }
   
  
-  for(i=0;i<=NX;i++)    //ËÙ¶È³õÊ¼»¯
+  for(i=0;i<=NX;i++)    //initialization of DF
     for(j=0;j<=NY;j++) 
     { 
       u[i][j][0]=-U*cos(2.0*pi*xlabel[i][j])*sin(2.0*pi*ylabel[i][j]); 
@@ -235,7 +236,7 @@ void init(double tau)
 
 
  
-double feq(int k,double rho,double u[2])   // ¼ÆËãÆ½ºâÌ¬·Ö²¼º¯Êý
+double feq(int k,double rho,double u[2])   //  equilibrium distribution
 { 
   double eu,uv,feq; 
   eu=(e[k][0]*u[0]+e[k][1]*u[1]); 
@@ -269,7 +270,7 @@ void evolution()
 				           +
 				           s_nu*(  0.5*(f[i][j][k]+f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])+feq(ne[k],rho[i][j], u[i][j]))   )
 						   +
-				           s_q*(  0.5*(f[i][j][k]-f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])-feq(ne[k],rho[i][j], u[i][j]))   );    //Åö×²
+				           s_q*(  0.5*(f[i][j][k]-f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])-feq(ne[k],rho[i][j], u[i][j]))   );    //collision
 			        if(isnan(F[i][j][k])) {
 				        thenan_after = true;
 				}	
@@ -307,7 +308,7 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 					if( flag[i][j]==1 && flag[ip][jp]==0 )
 					{
 					   
-						comput_q(i,j,ip,jp);
+						comput_q(i,j,ip,jp); // compute the ratio $gamma$, the computed value is 'q', which is equal to gamma * dx
 
 					   iq=xlabel[i][j]-q*double(e[k][0]);
 					   jq=ylabel[i][j]-q*double(e[k][1]);
@@ -375,11 +376,11 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 	if(isnan(u[i][j][1])) {
 		std::cout << "u[" << i << "][" << j << "][1] is nan!" << std::endl;
 	}
-          u[i][j][0]/=rho[i][j]; 
-          u[i][j][1]/=rho[i][j]; 
+          //u[i][j][0]/=rho[i][j]; 
+          //u[i][j][1]/=rho[i][j]; 
 
-		  //u[i][j][0]/=rho0; 
-          //u[i][j][1]/=rho0; 
+	  u[i][j][0]/=rho0; 
+          u[i][j][1]/=rho0; 
 
         
 		} 
@@ -399,7 +400,7 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 
 
 
-void comput_q (int i, int j, int ip, int jp)  //1±íÊ¾´óÓÚ0.5£¬-1±íÊ¾Ð¡ÓÚ0.5,2ÎªÕý³£¸ñµã
+void comput_q (int i, int j, int ip, int jp)  // compute the ratio $gamma$, the computed value is 'q', which is equal to gamma * dx
 {
      if (ip==i)
 	 {   
@@ -431,7 +432,7 @@ void comput_q (int i, int j, int ip, int jp)  //1±íÊ¾´óÓÚ0.5£¬-1±íÊ¾Ð¡ÓÚ0.5,2ÎªÕ
 
 
 
-        void output(int m)    //Êä³ö
+        void output(int m)    //output the data
         { 
           ostringstream name; 
           name<<"TaylorGreen"<<"Re_"<<Re<<"Íø¸ñ"<<NX<<"_"<<NY<<"µü´ú_"<<m<<"´Î"".dat"; 
@@ -450,7 +451,7 @@ void comput_q (int i, int j, int ip, int jp)  //1±íÊ¾´óÓÚ0.5£¬-1±íÊ¾Ð¡ÓÚ0.5,2ÎªÕ
  
       
 		
-		void Error()   //¼ÆËãÏà¶ÔÎó²î
+	void Error()   //compute error
         { 
           double temp1,temp2; 
           temp1=0; 
