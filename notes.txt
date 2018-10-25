@@ -62,3 +62,5 @@ def fix_mojibake(filepath, encoding='utf-16-be'):
 	print(data.decode(encoding))
 
 The correctly encoded text is a mixture of korean and chinese characters, mostly korean. I put the text into google translate which correctly identified the language, but didn't give me any translation. I've sent this text to a family friend of mine who knows korean and has phd training in physics. She will be able to tell if 1) It's gibberish indicating the encoding is still incorrect, or 2) It's technical language which google isn't able to understand. in which case she'll be able to provide a translation of these comments.
+10:57:00: It's been suggested that we send code snippets to the original authors and request translations. I'm compiling a document with the comments.
+11:52:00: Email sent
