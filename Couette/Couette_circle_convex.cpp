@@ -11,11 +11,11 @@
  
 using namespace std; 
 const int Q=9; 
-const int NX = 66;   
-const int NY = 66; 
+const int NX = 102;
+const int NY = 102;
 const double U=0.1; 
 const double pi=3.1415926;
-const double beta=0.5;
+const double beta=0.1;
 
 
  
@@ -111,8 +111,8 @@ void init()
   SS=1.0;                    //tau
   s_nu=-1.0/SS;
   // s_q = s_nu;
-  // s_q=-8.0*(2+s_nu)/(8+s_nu);  
-  s_q=8.0*(2+s_nu)/(8+7.0*s_nu);
+  s_q=-8.0*(2+s_nu)/(8+s_nu);  
+  //s_q=8.0*(2+s_nu)/(8+7.0*s_nu); // This isn't right??
 
   dt=(SS -0.5)/3.0 *dx*dx /niu;
   c=dx/dt;
@@ -120,7 +120,7 @@ void init()
   cout<<"U/c = "<<U/c<<"\n";
 
 
-  R2=Lx/2.0;  // Բ�뾶  
+  R2=0.8*Lx;  // Բ�뾶  
   R1=R2*beta;
 
   rho0=1.0;

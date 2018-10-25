@@ -170,7 +170,8 @@ void init(double tau)
   SS=tau;                    //tau
   s_nu=-1.0/SS;
   //s_q = s_nu;
-  s_q=8.0*(2+s_nu)/(8+7.0*s_nu); 
+  //s_q=8.0*(2+s_nu)/(8+7.0*s_nu); 
+  s_q=8.0*(2+s_nu)/(8+s_nu); 
   dt=(SS -0.5)/3.0 *dx*dx /niu;
   c=dx/dt;
 
@@ -374,11 +375,11 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 	if(isnan(u[i][j][1])) {
 		std::cout << "u[" << i << "][" << j << "][1] is nan!" << std::endl;
 	}
-          //u[i][j][0]/=rho[i][j]; 
-          //u[i][j][1]/=rho[i][j]; 
+          u[i][j][0]/=rho[i][j]; 
+          u[i][j][1]/=rho[i][j]; 
 
-		  u[i][j][0]/=rho0; 
-          u[i][j][1]/=rho0; 
+		  //u[i][j][0]/=rho0; 
+          //u[i][j][1]/=rho0; 
 
         
 		} 
