@@ -243,9 +243,6 @@ double feq(int k,double rho,double u[2])   //  equilibrium distribution
   uv=(u[0]*u[0]+u[1]*u[1]); 
   //feq=w[k]*rho*(1.0+3.0*eu/c+4.5*eu*eu/c/c-1.5*uv/c/c); 
   feq=w[k]*(rho + rho0* (3.0*eu/c+4.5*eu*eu/c/c-1.5*uv/c/c) ); 
-  if(isinf(feq)) {
-	  std::cout << w[k] << " " << eu << " " << uv << " " << u[0] << " " << u[1] << std::endl;
-  }
   return feq; 
 } 
 
@@ -253,7 +250,6 @@ double feq(int k,double rho,double u[2])   //  equilibrium distribution
  
 void evolution() 
 { 
-	std::cout << "evolution" << std::endl;
 
 
   
@@ -261,32 +257,11 @@ void evolution()
 		for(j=(NY+1)/4-3;j<=(NY+1)/4*3+3;j++) 
 		{
 			for(k=0;k<Q;k++)  {
-				bool thenan_before = false;
-				bool thenan_after = false;
-				if(isnan(F[i][j][k])) {
-					thenan_before = true;
-				}
 				F[i][j][k]=f[i][j][k]
 				           +
 				           s_nu*(  0.5*(f[i][j][k]+f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])+feq(ne[k],rho[i][j], u[i][j]))   )
 						   +
 				           s_q*(  0.5*(f[i][j][k]-f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])-feq(ne[k],rho[i][j], u[i][j]))   );    //collision
-			        if(isnan(F[i][j][k])) {
-				        thenan_after = true;
-				}	
-			        if((!thenan_before)&&(thenan_after)) {
-				        if(isnan(f[i][j][k])) {
-						std::cout << "condition met: first summation term" << std::endl;
-					}
-					if(isnan(s_nu*(  0.5*(f[i][j][k]+f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])+feq(ne[k],rho[i][j], u[i][j]))))) {
-						std::cout << "condition met: second summation term" << std::endl;
-					}
-					if(isnan(s_q*(  0.5*(f[i][j][k]-f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])-feq(ne[k],rho[i][j], u[i][j]))   ))) {
-						std::cout << "condition met: third summation term" << std::endl;
-						std::cout << "printing factors" << std::endl;
-						std::cout << s_q << " " << f[i][j][k] << " " << f[i][j][ne[k]] << " " << feq(k, rho[i][j], u[i][j]) << " " << feq(ne[k], rho[i][j], u[i][j]) << std::endl;
-					}
-				}
 			}
 
 		}
@@ -357,25 +332,10 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
           { 
             f[i][j][k] = ff[i][j][k];
             rho[i][j]+=f[i][j][k]; 
-            if(isnan(e[k][0])) {
-		    std::cout << "e[" << k << "][0] is nan!" << std::endl;
-	    }
-            if(isnan(e[k][1])) {
-		    std::cout << "e[" << k << "][1] is nan!" << std::endl;
-	    }
-            if(isnan(f[i][j][k])) {
-		    std::cout << "f[" << i << "][" << j << "][" << k << "] is nan!" << std::endl;
-	    }
             u[i][j][0]+=c*e[k][0]*f[i][j][k]; 
             u[i][j][1]+=c*e[k][1]*f[i][j][k]; 
           } 
 
-	if(isnan(u[i][j][0])) {
-		std::cout << "u[" << i << "][" << j << "][0] is nan!" << std::endl;
-	}
-	if(isnan(u[i][j][1])) {
-		std::cout << "u[" << i << "][" << j << "][1] is nan!" << std::endl;
-	}
           //u[i][j][0]/=rho[i][j]; 
           //u[i][j][1]/=rho[i][j]; 
 
@@ -478,10 +438,6 @@ void comput_q (int i, int j, int ip, int jp)  // compute the ratio $gamma$, the 
 			}
 
 
-	  std::cout<< "NX: " << NX << std::endl;
-	  std::cout << "NY: " << NY << std::endl;
-	  std::cout << "temp1: " << temp1 << std::endl;
-	  std::cout << "temp2: " << temp2 << std::endl;
             temp1=sqrt(temp1); 
             temp2=sqrt(temp2); 
             error=temp1/(temp2+1e-30); 

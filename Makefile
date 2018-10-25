@@ -1,4 +1,5 @@
-CXXFLAGS := -g
+#CXXFLAGS := -g
+CXXFLAGS := -O3
 
 all: bin/Couette_circle_convex bin/Couette_circle_nonconvex bin/taylor_vortex_convex bin/taylor_vortex_nonconvex bin/poiseuille_convex bin/poiseuille_nonconvex
 
