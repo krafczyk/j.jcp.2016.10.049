@@ -9,35 +9,26 @@
 #include<sstream> 
 #include<string> 
 #include<stdio.h> 
-#include "ArgParseStandalone.h"
-#include "utilities.h"
  
 using namespace std; 
 const int Q=9; 
-int NY=0; 
-int NX=0; 
+const int NX = 49; 
+const int NY = 49; 
 const double U=0.05; 
 const double pi=3.1415926;
 
 
  
 int e[Q][2]={{0,0},{1,0},{0,1},{-1,0},{0,-1},{1,1},{-1,1},{-1,-1},{1,-1}};       //9 directions
-int ne[Q]={0,3,4,1,2,7,8,5,6};                                                //back directions
+int ne[Q]={0,3,4,1,2,7,8,5,6};                                                //the opposite direction
 double w[Q]={4.0/9,1.0/9,1.0/9,1.0/9,1.0/9,1.0/36,1.0/36,1.0/36,1.0/36}; 
-double** rho = NULL;
-double*** u = NULL;
-double*** u0 = NULL;
-double*** f = NULL;
-double*** ff = NULL;
-double*** F = NULL;
-double** xlabel = NULL;
-double** ylabel = NULL;
+double rho[NX+1][NY+1],u[NX+1][NY+1][2],u0[NX+1][NY+1][2],f[NX+1][NY+1][Q],ff[NX+1][NY+1][Q],F[NX+1][NY+1][Q],xlabel[NX+1][NY+1],ylabel[NX+1][NY+1]; 
 int i,j,k,ip,jp,n,q_flag; 
 double c,Re,dx,dy,Lx,Ly,D,dt,rho0,p0,tau_f,niu,error,y,yy1,yy2,kk,b,cc,x1,x2,x,q; 
 
 double iq,jq,AA,BB,CC,DD,EE,rr,uu,vv,Center_x,Center_y;
-double R;  //radius of the circle 
-double ell=1.0;  // a parameter to control the shape of the boundary: ell*(x-x0)^2+(y-y0)^2=R^2, ell=1 for circle
+double R;  						// radius 
+double ell=1.0; 	 // parameter of ellipse, i.e., ell*(x-x0)^2+(y-y0)^2=R^2, ell controls the flatness or roundness of ellipse
 double s_nu,s_q,SS,cs_2;
 
 //double abs( double i);
@@ -47,57 +38,23 @@ void comput_q (int i, int j, int ip, int jp);
 
 
  
-void init(double tau); 
+void init(); 
 double feq(int k,double rho,double u[2]); 
 void evolution(); 
 void output(int m); 
 void Error(); 
-int** flag = NULL;
-bool verbose = false;
+int flag[NX+1][NY+1];
 
 
 // void outdata();
  
-int main(int argc, char** argv) 
+int main() 
 { 
   using namespace std; 
 
-  double tau = 0.;
-  int Ny = 0;
-  bool dump_solution_passed = false;
-  std::string solution_filepath;
-  bool header = false;
-
-  ArgParse::ArgParser Parser("Vortex Convex Simulation");
-  Parser.AddArgument("--tau", "Set the value for tau", &tau, ArgParse::Argument::Required);
-  Parser.AddArgument("--Ny", "Set the y resolution Ny", &Ny, ArgParse::Argument::Required);
-  Parser.AddArgument("--dump-solution", "Filepath to dump solution at.", &solution_filepath, ArgParse::Argument::Optional, &dump_solution_passed);
-  Parser.AddArgument("--header", "Whether or not to include column headers in the output", &header, ArgParse::Argument::Optional);
-  Parser.AddArgument("--verbose", "Whether to print extra stuff", &verbose, ArgParse::Argument::Optional);
-
-  if(Parser.ParseArgs(argc, argv) < 0) {
-	  printf("Problem parsing arguments!");
-	  return -1;
-  }
-
-  if(Parser.HelpPrinted()) {
-	  return 0;
-  } 
-  NY = Ny;
-  NX = NY;
-
-  rho = New2DArray<double>(NX+1,NY+1); 
-  u = New3DArray<double>(NX+1,NY+1,2);
-  u0 = New3DArray<double>(NX+1,NY+1,2);
-  f = New3DArray<double>(NX+1,NY+1,Q);
-  ff = New3DArray<double>(NX+1,NY+1,Q);
-  F = New3DArray<double>(NX+1,NY+1,Q);
-  xlabel = New2DArray<double>(NX+1,NY+1);
-  ylabel = New2DArray<double>(NX+1,NY+1); 
-  flag = New2DArray<int>(NX+1,NY+1);
   
 
-  init(tau);  //initiate
+  init();  // initialize
 
 
   for(n=0; ;n++) 
@@ -110,13 +67,11 @@ int main(int argc, char** argv)
 
 	if(n%100==0)
 	{
-		if(verbose) {
       cout<<"The"<<n<<"th computation result:"<<endl<<"The u,v of point (NX/2,NY/2)is : " 
      
       <<setprecision(6)<<u[NX/2][NY/2][0]<<","<<u[NX/2][NY/2][1]<<endl; 
       cout<<"The max relative error of uv is:" 
         <<setiosflags(ios::scientific)<<error<<endl; 
-		}
        
 	//  output(n);
         
@@ -125,38 +80,21 @@ int main(int argc, char** argv)
 	if(n==int(1.0*Lx/U/dt)) 
 	{
         Error();
-        if (verbose) {
 		cout<<"The max relative error of uv is:" 
         <<setiosflags(ios::scientific)<<error<<endl; 
-	}
-	if(dump_solution_passed) {
+
 		output(n+1);
-	}
-        if(header) {
-          printf("\"Lattice Size\", \"NY\", \"Tau\", \"Error\"\n");
-       	}
-       	printf("%.14f, %i, %.14f, %.14f\n",dx, NY,tau,error);
 		break;
 	}
 
   } 
-
-  Delete2DArray<double>(rho,NX+1,NY+1); 
-  Delete3DArray<double>(u,NX+1,NY+1,2);
-  Delete3DArray<double>(u0,NX+1,NY+1,2);
-  Delete3DArray<double>(f,NX+1,NY+1,Q);
-  Delete3DArray<double>(ff,NX+1,NY+1,Q);
-  Delete3DArray<double>(F,NX+1,NY+1,Q);
-  Delete2DArray<double>(xlabel,NX+1,NY+1);
-  Delete2DArray<double>(ylabel,NX+1,NY+1); 
-  Delete2DArray<int>(flag,NX+1,NY+1);
-
+ 
   return 0; 
 } 
 
 
 
-void init(double tau) 
+void init() 
 { 
   
   Lx=1.0; 
@@ -164,54 +102,50 @@ void init(double tau)
   dx=Lx/(NX+1); 
   dy=dx; 
   niu=0.002;
-  SS=tau;                    //tau
+  SS=1.0/1.5;                    //tau
   s_nu=-1.0/SS;
   //s_q = s_nu;
-  //s_q=8.0*(2+s_nu)/(8+7.0*s_nu); 
-  //s_q=8.0*(2+s_nu)/(8+s_nu); 
-  s_q=-8.0*(2+s_nu)/(8+s_nu);             
+  s_q=8.0*(2+s_nu)/(8+7.0*s_nu); 
   dt=(SS -0.5)/3.0 *dx*dx /niu;
   c=dx/dt;
 
-  if(verbose) {
   cout<<"U/c = "<<U/c<<"\n";
-  }
 
 
 
 
-  R=Lx/4.0;  // radius 
+  R=Lx/4.0;  // radius
   rho0=1.0;
   cs_2=c*c/3.0;
   
-  for(i=0;i<=NX;i++)    //corrdinates of the lattice nodes
+  for(i=0;i<=NX;i++)    // coordinate
   for(j=0;j<=NY;j++) 
   {
 	  xlabel[i][j]=i*dx+0.5*dx;
 	  ylabel[i][j]=j*dy+0.5*dy;
 
   }
-  Center_x=Lx/2.0; //the centre of the circle
+  Center_x=Lx/2.0;
   Center_y=Ly/2.0;
 
   
 
-  for (i=0;i<=NX;i++)    //tag different lattice nodes
+  for (i=0;i<=NX;i++)    // assign values to flag, categorize coordinates
 	  for (j=0;j<=NY;j++)
 	  {
-		  flag[i][j]=0;           //内部流体节点
+		  flag[i][j]=0;           // inside
 
-		  if( (  ell*(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x) + (ylabel[i][j]-Center_y)*(ylabel[i][j]-Center_y) ) < R*R )//圆内部
+		  if( (  ell*(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x) + (ylabel[i][j]-Center_y)*(ylabel[i][j]-Center_y) ) < R*R ) // inside the circle
 		  {
 			 
-		        flag[i][j]=1;	  //internal fluid lattice nodes
+		        flag[i][j]=1;	  
 
 		  }
 
 	  }
   
  
-  for(i=0;i<=NX;i++)    //initialization of DF
+  for(i=0;i<=NX;i++)    // initialize velocity
     for(j=0;j<=NY;j++) 
     { 
       u[i][j][0]=-U*cos(2.0*pi*xlabel[i][j])*sin(2.0*pi*ylabel[i][j]); 
@@ -228,12 +162,12 @@ void init(double tau)
     }
 
 
-} //结束初始化
+} // end of initialization
 
 
 
  
-double feq(int k,double rho,double u[2])   //  equilibrium distribution
+double feq(int k,double rho,double u[2])   // calculate equilibrium distribution
 { 
   double eu,uv,feq; 
   eu=(e[k][0]*u[0]+e[k][1]*u[1]); 
@@ -253,13 +187,13 @@ void evolution()
 	 for(i=(NX+1)/4-3;i<=(NX+1)/4*3+3;i++) 
 		for(j=(NY+1)/4-3;j<=(NY+1)/4*3+3;j++) 
 		{
-			for(k=0;k<Q;k++)  {
+			for(k=0;k<Q;k++) 
 				F[i][j][k]=f[i][j][k]
 				           +
 				           s_nu*(  0.5*(f[i][j][k]+f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])+feq(ne[k],rho[i][j], u[i][j]))   )
 						   +
-				           s_q*(  0.5*(f[i][j][k]-f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])-feq(ne[k],rho[i][j], u[i][j]))   );    //collision
-			}
+				           s_q*(  0.5*(f[i][j][k]-f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])-feq(ne[k],rho[i][j], u[i][j]))   );    // collision
+		
 
 		}
 	
@@ -270,6 +204,7 @@ void evolution()
 for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++) 
 		for(j=(NY+1)/4-3;   j<=(NY+1)/4*3+3;  j++) 
 			{
+
 			if(flag[i][j]==1)
 			{
 				for(k=0;k<Q;k++) 
@@ -277,10 +212,11 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 					ip=i-e[k][0]; 
 					jp=j-e[k][1];
 				
+
 					if( flag[i][j]==1 && flag[ip][jp]==0 )
 					{
 					   
-						comput_q(i,j,ip,jp); // compute the ratio $gamma$, the computed value is 'q', which is equal to gamma * dx
+						comput_q(i,j,ip,jp);
 
 					   iq=xlabel[i][j]-q*double(e[k][0]);
 					   jq=ylabel[i][j]-q*double(e[k][1]);
@@ -333,10 +269,11 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
             u[i][j][1]+=c*e[k][1]*f[i][j][k]; 
           } 
 
+
           //u[i][j][0]/=rho[i][j]; 
           //u[i][j][1]/=rho[i][j]; 
 
-	  u[i][j][0]/=rho0; 
+		  u[i][j][0]/=rho0; 
           u[i][j][1]/=rho0; 
 
         
@@ -357,7 +294,7 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 
 
 
-void comput_q (int i, int j, int ip, int jp)  // compute the ratio $gamma$, the computed value is 'q', which is equal to gamma * dx
+void comput_q (int i, int j, int ip, int jp)  // 2 is the ordinary coordinate/grid
 {
      if (ip==i)
 	 {   
@@ -389,7 +326,7 @@ void comput_q (int i, int j, int ip, int jp)  // compute the ratio $gamma$, the 
 
 
 
-        void output(int m)    //output the data
+        void output(int m)    // output
         { 
           ostringstream name; 
           name<<"TaylorGreen"<<"Re_"<<Re<<"网格"<<NX<<"_"<<NY<<"迭代_"<<m<<"次"".dat"; 
@@ -408,7 +345,7 @@ void comput_q (int i, int j, int ip, int jp)  // compute the ratio $gamma$, the 
  
       
 		
-	void Error()   //compute error
+		void Error()   // calculate relative error
         { 
           double temp1,temp2; 
           temp1=0; 
