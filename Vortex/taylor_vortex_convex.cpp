@@ -112,11 +112,13 @@ int main(int argc, char** argv)
 
 	if(n%100==0)
 	{
+		if(verbose) {
       cout<<"The"<<n<<"th computation result:"<<endl<<"The u,v of point (NX/2,NY/2)is : " 
      
       <<setprecision(6)<<u(NX/2,NY/2,0)<<","<<u(NX/2,NY/2,1)<<endl; 
       cout<<"The max relative error of uv is:" 
         <<setiosflags(ios::scientific)<<error<<endl; 
+		}
        
 	//  output(n);
         
@@ -125,10 +127,18 @@ int main(int argc, char** argv)
 	if(n==int(1.0*Lx/U/dt)) 
 	{
         Error();
+        if (verbose) {
 		cout<<"The max relative error of uv is:" 
         <<setiosflags(ios::scientific)<<error<<endl; 
+	}
 
+	if(dump_solution_passed) {
 		output(n+1);
+	}
+        if(header) {
+          printf("\"Lattice Size\", \"NY\", \"Tau\", \"Error\"\n");
+       	}
+       	printf("%.14f, %i, %.14f, %.14f\n",dx, NY,tau,error);
 		break;
 	}
 
@@ -154,7 +164,9 @@ void init(double tau)
   dt=(SS -0.5)/3.0 *dx*dx /niu;
   c=dx/dt;
 
+  if(verbose) {
   cout<<"U/c = "<<U/c<<"\n";
+  }
 
 
 
