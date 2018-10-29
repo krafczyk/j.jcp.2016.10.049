@@ -68,7 +68,7 @@ int main(int argc, char** argv)
   std::string solution_filepath;
   bool header = false;
 
-  ArgParse::ArgParser Parser("Poiseuille Non Convex Simulation");
+  ArgParse::ArgParser Parser("Vortex Convex Simulation");
   Parser.AddArgument("--tau", "Set the value for tau", &tau, ArgParse::Argument::Required);
   Parser.AddArgument("--Ny", "Set the y resolution Ny", &Ny, ArgParse::Argument::Required);
   Parser.AddArgument("--dump-solution", "Filepath to dump solution at.", &solution_filepath, ArgParse::Argument::Optional, &dump_solution_passed);
@@ -82,8 +82,7 @@ int main(int argc, char** argv)
 
   if(Parser.HelpPrinted()) {
 	  return 0;
-  }
-
+  } 
   NY = Ny;
   NX = NY;
 
