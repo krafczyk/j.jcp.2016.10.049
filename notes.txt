@@ -68,3 +68,4 @@ The correctly encoded text is a mixture of korean and chinese characters, mostly
 12:12:00: I've integrated changes and some translated comments from what they sent. The code no longer produces the nan values and I think I've figured out where the issue originated from. The s_q had the wrong sign it seems. This is the case for the taylor vortex
 13:16:00: I've now done some work transforming the Vortex non convex code.
 13:21:00: The Vortex non convex code still has nan problems.
+14:26:00: After struggling for a while, I found some versions of the original code which were translated initially by one of ourgroup members. They all seem to run, so I'm going to try to add the appropriate command line options as before. I'll add them alongside the original files first, then get rid of the non-working files.
