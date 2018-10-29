@@ -70,7 +70,7 @@ int main(int argc, char** argv)
   std::string solution_filepath;
   bool header = false;
 
-  ArgParse::ArgParser Parser("Vortex Non Convex Simulation");
+  ArgParse::ArgParser Parser("Vortex Convex Simulation");
   Parser.AddArgument("--tau", "Set the value for tau", &tau, ArgParse::Argument::Required);
   Parser.AddArgument("--Ny", "Set the y resolution Ny", &Ny, ArgParse::Argument::Required);
   Parser.AddArgument("--dump-solution", "Filepath to dump solution at.", &solution_filepath, ArgParse::Argument::Optional, &dump_solution_passed);
@@ -160,7 +160,8 @@ void init(double tau)
   SS=tau;                    //tau
   s_nu=-1.0/SS;
   //s_q = s_nu;
-  s_q=8.0*(2+s_nu)/(8+7.0*s_nu); 
+  //s_q=8.0*(2+s_nu)/(8+7.0*s_nu); 
+  s_q=-8.0*(2+s_nu)/(8+s_nu); 
   dt=(SS -0.5)/3.0 *dx*dx /niu;
   c=dx/dt;
 
