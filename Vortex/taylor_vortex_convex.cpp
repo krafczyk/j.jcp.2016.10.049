@@ -10,11 +10,12 @@
 #include<string> 
 #include<stdio.h> 
 #include "utilities.h"
- 
+#include "ArgParseStandalone.h"
+
 using namespace std; 
 const int Q=9; 
-const int NX = 49; 
-const int NY = 49; 
+int NX = 0; 
+int NY = 0; 
 const double U=0.05; 
 const double pi=3.1415926;
 
@@ -47,20 +48,46 @@ void comput_q (int i, int j, int ip, int jp);
 
 
  
-void init(); 
+void init(double tau); 
 double feq(int k,double rho,double u_0, double u_1); 
 void evolution(); 
 void output(int m); 
 void Error(); 
 //int flag[NX+1][NY+1];
 Array2D<int> flag;
+bool verbose = false;
 
 
 // void outdata();
  
-int main() 
+int main(int argc, char** argv) 
 { 
   using namespace std; 
+
+  double tau = 0.;
+  int Ny = 0;
+  bool dump_solution_passed = false;
+  std::string solution_filepath;
+  bool header = false;
+
+  ArgParse::ArgParser Parser("Vortex Non Convex Simulation");
+  Parser.AddArgument("--tau", "Set the value for tau", &tau, ArgParse::Argument::Required);
+  Parser.AddArgument("--Ny", "Set the y resolution Ny", &Ny, ArgParse::Argument::Required);
+  Parser.AddArgument("--dump-solution", "Filepath to dump solution at.", &solution_filepath, ArgParse::Argument::Optional, &dump_solution_passed);
+  Parser.AddArgument("--header", "Whether or not to include column headers in the output", &header, ArgParse::Argument::Optional);
+  Parser.AddArgument("--verbose", "Whether to print extra stuff", &verbose, ArgParse::Argument::Optional);
+
+  if(Parser.ParseArgs(argc, argv) < 0) {
+	  printf("Problem parsing arguments!");
+	  return -1;
+  }
+
+  if(Parser.HelpPrinted()) {
+	  return 0;
+  } 
+
+  NY = Ny;
+  NX = NY;
 
   rho.init(NX+1,NY+1);
   u.init(NX+1,NY+1,2);
@@ -71,9 +98,8 @@ int main()
   xlabel.init(NX+1,NY+1);
   ylabel.init(NX+1,NY+1); 
   flag.init(NX+1,NY+1);
-  
-
-  init();  // initialize
+ 
+  init(tau);  // initialize
 
 
   for(n=0; ;n++) 
@@ -113,7 +139,7 @@ int main()
 
 
 
-void init() 
+void init(double tau) 
 { 
   
   Lx=1.0; 
@@ -121,7 +147,7 @@ void init()
   dx=Lx/(NX+1); 
   dy=dx; 
   niu=0.002;
-  SS=1.0/1.5;                    //tau
+  SS=tau;                    //tau
   s_nu=-1.0/SS;
   //s_q = s_nu;
   s_q=8.0*(2+s_nu)/(8+7.0*s_nu); 
