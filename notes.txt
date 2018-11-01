@@ -69,3 +69,6 @@ The correctly encoded text is a mixture of korean and chinese characters, mostly
 13:16:00: I've now done some work transforming the Vortex non convex code.
 13:21:00: The Vortex non convex code still has nan problems.
 14:26:00: After struggling for a while, I found some versions of the original code which were translated initially by one of ourgroup members. They all seem to run, so I'm going to try to add the appropriate command line options as before. I'll add them alongside the original files first, then get rid of the non-working files.
+16:17:00: Close inspection of the code I received, verifying compilation and running at each stage, it seems that changing the vortex code to s_v = 8*(2+s_q)/(8+s_q) causes the nan issue. I'm not sure why its doing this. I'm going to send an email to the authors asking.
+16:29:00: I tried increasing the precision level to quad, however that didn't work.
+16:29:00: The authors have gotten back to me, They claim they also can't get the solution to work for tau=3.0. They think they forgot to switch the scheme back to their scheme from testing the BGK scheme. (Apparently BGK scheme is when s_nu = s_q) They say this shows one case where BGK is more stable.
