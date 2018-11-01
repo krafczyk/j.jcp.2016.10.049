@@ -1,4 +1,4 @@
-// Taylor Green vortex flow, nonconvex scheme
+// Taylor Green vortex flow, convex scheme
 
 
 #include<iostream> 
@@ -9,35 +9,36 @@
 #include<sstream> 
 #include<string> 
 #include<stdio.h> 
-#include "ArgParseStandalone.h"
 #include "utilities.h"
- 
+#include "ArgParseStandalone.h"
+
 using namespace std; 
 const int Q=9; 
-int NY=0; 
-int NX=0; 
+int NX = 0; 
+int NY = 0; 
 const double U=0.05; 
 const double pi=3.1415926;
 
 
  
 int e[Q][2]={{0,0},{1,0},{0,1},{-1,0},{0,-1},{1,1},{-1,1},{-1,-1},{1,-1}};       //9 directions
-int ne[Q]={0,3,4,1,2,7,8,5,6};                                                //back directions
+int ne[Q]={0,3,4,1,2,7,8,5,6};                                                //the opposite direction
 double w[Q]={4.0/9,1.0/9,1.0/9,1.0/9,1.0/9,1.0/36,1.0/36,1.0/36,1.0/36}; 
-double** rho = NULL;
-double*** u = NULL;
-double*** u0 = NULL;
-double*** f = NULL;
-double*** ff = NULL;
-double*** F = NULL;
-double** xlabel = NULL;
-double** ylabel = NULL;
+//double rho[NX+1][NY+1],u[NX+1][NY+1][2],u0[NX+1][NY+1][2],f[NX+1][NY+1][Q],ff[NX+1][NY+1][Q],F[NX+1][NY+1][Q],xlabel[NX+1][NY+1],ylabel[NX+1][NY+1]; 
+Array2D<double> rho;
+Array3D<double> u;
+Array3D<double> u0;
+Array3D<double> f;
+Array3D<double> ff;
+Array3D<double> F;
+Array2D<double> xlabel;
+Array2D<double> ylabel; 
 int i,j,k,ip,jp,n,q_flag; 
 double c,Re,dx,dy,Lx,Ly,D,dt,rho0,p0,tau_f,niu,error,y,yy1,yy2,kk,b,cc,x1,x2,x,q; 
 
 double iq,jq,AA,BB,CC,DD,EE,rr,uu,vv,Center_x,Center_y;
-double R;  //radius of the circle 
-double ell=1.0;  // a parameter to control the shape of the boundary: ell*(x-x0)^2+(y-y0)^2=R^2, ell=1 for circle
+double R;  						// radius 
+double ell=1.0; 	 // parameter of ellipse, i.e., ell*(x-x0)^2+(y-y0)^2=R^2, ell controls the flatness or roundness of ellipse
 double s_nu,s_q,SS,cs_2;
 
 //double abs( double i);
@@ -48,11 +49,12 @@ void comput_q (int i, int j, int ip, int jp);
 
  
 void init(double tau); 
-double feq(int k,double rho,double u[2]); 
+double feq(int k,double rho,double u_0, double u_1); 
 void evolution(); 
 void output(int m); 
 void Error(); 
-int** flag = NULL;
+//int flag[NX+1][NY+1];
+Array2D<int> flag;
 bool verbose = false;
 
 
@@ -68,7 +70,7 @@ int main(int argc, char** argv)
   std::string solution_filepath;
   bool header = false;
 
-  ArgParse::ArgParser Parser("Vortex Non Convex Simulation");
+  ArgParse::ArgParser Parser("Vortex Convex Simulation");
   Parser.AddArgument("--tau", "Set the value for tau", &tau, ArgParse::Argument::Required);
   Parser.AddArgument("--Ny", "Set the y resolution Ny", &Ny, ArgParse::Argument::Required);
   Parser.AddArgument("--dump-solution", "Filepath to dump solution at.", &solution_filepath, ArgParse::Argument::Optional, &dump_solution_passed);
@@ -83,20 +85,21 @@ int main(int argc, char** argv)
   if(Parser.HelpPrinted()) {
 	  return 0;
   } 
+
   NY = Ny;
   NX = NY;
 
-  rho = New2DArray<double>(NX+1,NY+1); 
-  u = New3DArray<double>(NX+1,NY+1,2);
-  u0 = New3DArray<double>(NX+1,NY+1,2);
-  f = New3DArray<double>(NX+1,NY+1,Q);
-  ff = New3DArray<double>(NX+1,NY+1,Q);
-  F = New3DArray<double>(NX+1,NY+1,Q);
-  xlabel = New2DArray<double>(NX+1,NY+1);
-  ylabel = New2DArray<double>(NX+1,NY+1); 
-  flag = New2DArray<int>(NX+1,NY+1);
-
-  init(tau);  //initiate
+  rho.init(NX+1,NY+1);
+  u.init(NX+1,NY+1,2);
+  u0.init(NX+1,NY+1,2);
+  f.init(NX+1,NY+1,Q);
+  ff.init(NX+1,NY+1,Q);
+  F.init(NX+1,NY+1,Q);
+  xlabel.init(NX+1,NY+1);
+  ylabel.init(NX+1,NY+1); 
+  flag.init(NX+1,NY+1);
+ 
+  init(tau);  // initialize
 
 
   for(n=0; ;n++) 
@@ -112,17 +115,14 @@ int main(int argc, char** argv)
 		if(verbose) {
       cout<<"The"<<n<<"th computation result:"<<endl<<"The u,v of point (NX/2,NY/2)is : " 
      
-      <<setprecision(6)<<u[NX/2][NY/2][0]<<","<<u[NX/2][NY/2][1]<<endl; 
+      <<setprecision(6)<<u(NX/2,NY/2,0)<<","<<u(NX/2,NY/2,1)<<endl; 
       cout<<"The max relative error of uv is:" 
         <<setiosflags(ios::scientific)<<error<<endl; 
 		}
        
-	//  output(n);// outdata();
+	//  output(n);
         
 	} 
-
-//	if(n%1000==0)  
-//		output(n);
 
 	if(n==int(1.0*Lx/U/dt)) 
 	{
@@ -160,7 +160,8 @@ void init(double tau)
   SS=tau;                    //tau
   s_nu=-1.0/SS;
   //s_q = s_nu;
-  s_q=-8.0*(2+s_nu)/(8+s_nu);             
+  //s_q=8.0*(2+s_nu)/(8+7.0*s_nu); 
+  s_q=-8.0*(2+s_nu)/(8+s_nu); 
   dt=(SS -0.5)/3.0 *dx*dx /niu;
   c=dx/dt;
 
@@ -171,66 +172,67 @@ void init(double tau)
 
 
 
-  R=Lx/4.0;  // radius 
+  R=Lx/4.0;  // radius
   rho0=1.0;
   cs_2=c*c/3.0;
   
-  for(i=0;i<=NX;i++)    //corrdinates of the lattice nodes
+  for(i=0;i<=NX;i++)    // coordinate
   for(j=0;j<=NY;j++) 
   {
-	  xlabel[i][j]=i*dx+0.5*dx;
-	  ylabel[i][j]=j*dy+0.5*dy;
+	  xlabel.assign(i,j)=i*dx+0.5*dx;
+	  ylabel.assign(i,j)=j*dy+0.5*dy;
 
   }
-  Center_x=Lx/2.0; //the centre of the circle
+  Center_x=Lx/2.0;
   Center_y=Ly/2.0;
 
   
 
-  for (i=0;i<=NX;i++)    //tag different lattice nodes
+  for (i=0;i<=NX;i++)    // assign values to flag, categorize coordinates
 	  for (j=0;j<=NY;j++)
 	  {
-		  flag[i][j]=0;           //内部流体节点
+		  flag.assign(i,j)=0;           // inside
 
-		  if( (  ell*(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x) + (ylabel[i][j]-Center_y)*(ylabel[i][j]-Center_y) ) < R*R )//圆内部
+		  if( (  ell*(xlabel(i,j)-Center_x)*(xlabel(i,j)-Center_x) + (ylabel(i,j)-Center_y)*(ylabel(i,j)-Center_y) ) < R*R ) // inside the circle
 		  {
 			 
-		        flag[i][j]=1;	  //internal fluid lattice nodes
+		        flag.assign(i,j)=1;	  
 
 		  }
 
 	  }
-
-
-  for(i=0;i<=NX;i++)    //initialization of DF
+  
+ 
+  for(i=0;i<=NX;i++)    // initialize velocity
     for(j=0;j<=NY;j++) 
     { 
-      u[i][j][0]=-U*cos(2.0*pi*xlabel[i][j])*sin(2.0*pi*ylabel[i][j]); 
-      u[i][j][1]=U*cos(2.0*pi*ylabel[i][j])*sin(2.0*pi*xlabel[i][j]); 
-      rho[i][j]= rho0 -3.0*U*U/4.0/c/c*( cos(4.0*pi*xlabel[i][j])+cos(4.0*pi*ylabel[i][j]) ); 
+      u.assign(i,j,0)=-U*cos(2.0*pi*xlabel(i,j))*sin(2.0*pi*ylabel(i,j)); 
+      u.assign(i,j,1)=U*cos(2.0*pi*ylabel(i,j))*sin(2.0*pi*xlabel(i,j)); 
+      rho.assign(i,j)= rho0 -3.0*U*U/4.0/c/c*( cos(4.0*pi*xlabel(i,j))+cos(4.0*pi*ylabel(i,j)) ); 
 
 
       for(k=0;k<Q;k++) 
       { 
-        f[i][j][k]=feq(k,rho[i][j],u[i][j]); 
+        f.assign(i,j,k)=feq(k,rho(i,j),u(i,j,0),u(i,j,1)); 
       } 
 
 
     }
 
 
-} //结束初始化
+} // end of initialization
 
 
 
  
-double feq(int k,double rho,double u[2])   //  equilibrium distribution
+double feq(int k,double rho,double u_0, double u_1)   // calculate equilibrium distribution
 { 
   double eu,uv,feq; 
-  eu=(e[k][0]*u[0]+e[k][1]*u[1]); 
-  uv=(u[0]*u[0]+u[1]*u[1]); 
+  eu=(e[k][0]*u_0+e[k][1]*u_1); 
+  uv=(u_0*u_0+u_1*u_1); 
   //feq=w[k]*rho*(1.0+3.0*eu/c+4.5*eu*eu/c/c-1.5*uv/c/c); 
-  feq=w[k]*(rho + rho0* (3.0*eu/c+4.5*eu*eu/c/c-1.5*uv/c/c) ); 
+  //feq=w[k]*(rho + rho0* (3.0*eu/c+4.5*eu*eu/c/c-1.5*uv/c/c) ); 
+  feq=w[k]*(rho + rho0* (eu/cs_2+eu*eu/(cs_2*cs_2*2)-uv/(cs_2*2)) ); 
   return feq; 
 } 
 
@@ -244,13 +246,13 @@ void evolution()
 	 for(i=(NX+1)/4-3;i<=(NX+1)/4*3+3;i++) 
 		for(j=(NY+1)/4-3;j<=(NY+1)/4*3+3;j++) 
 		{
-			for(k=0;k<Q;k++)  {
-				F[i][j][k]=f[i][j][k]
+			for(k=0;k<Q;k++) 
+				F.assign(i,j,k)=f(i,j,k)
 				           +
-				           s_nu*(  0.5*(f[i][j][k]+f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])+feq(ne[k],rho[i][j], u[i][j]))   )
+				           s_nu*(  0.5*(f(i,j,k)+f(i,j,ne[k])) - 0.5*(feq(k,rho(i,j), u(i,j,0), u(i,j,1))+feq(ne[k],rho(i,j), u(i,j,0), u(i,j,1)))   )
 						   +
-				           s_q*(  0.5*(f[i][j][k]-f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])-feq(ne[k],rho[i][j], u[i][j]))   );    //collision
-			}
+				           s_q*(  0.5*(f(i,j,k)-f(i,j,ne[k])) - 0.5*(feq(k,rho(i,j), u(i,j,0), u(i,j,1))-feq(ne[k],rho(i,j), u(i,j,0), u(i,j,1)))   );    // collision
+		
 
 		}
 	
@@ -261,30 +263,22 @@ void evolution()
 for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++) 
 		for(j=(NY+1)/4-3;   j<=(NY+1)/4*3+3;  j++) 
 			{
-			if(flag[i][j]==1)
+
+			if(flag(i,j)==1)
 			{
 				for(k=0;k<Q;k++) 
 				{
 					ip=i-e[k][0]; 
 					jp=j-e[k][1];
+				
 
-					if( flag[i][j]==1 && flag[ip][jp]==0 )
+					if( flag(i,j)==1 && flag(ip,jp)==0 )
 					{
 					   
-						comput_q(i,j,ip,jp); // compute the ratio $gamma$, the computed value is 'q', which is equal to gamma * dx
-						//cout<<q<<endl;
-					
-					   
+						comput_q(i,j,ip,jp);
 
-					   //cout<<"q="<<q/dx<<endl;
-
-					   iq=xlabel[i][j]-q*double(e[k][0]);
-					   jq=ylabel[i][j]-q*double(e[k][1]);
-
-					   //cout<<"xlabel="<<xlabel[i][j]<<"ylabel="<<ylabel[i][j]<<endl;
-
-
-					   //cout<<"iq="<<iq<<"jq="<<jq<<endl;
+					   iq=xlabel(i,j)-q*double(e[k][0]);
+					   jq=ylabel(i,j)-q*double(e[k][1]);
 
 					    
 					    rr= rho0 - 3.0*U*U/4.0/c/c*( cos(iq*4.0*pi)+cos(jq*4.0*pi) )*exp(-16.0*niu*pi*pi*(n)*dt) ;
@@ -296,19 +290,20 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 
 						q=q/dx;
 
-						
+
                         AA= 2.0*q;
 						BB = 1.0-AA;
 						CC = 2.0;
 
-						ff[i][j][k] = AA*F[i][j][ne[k]] +BB*f[i][j][ne[k]] + CC*w[k]*rho0*3.0/c*(e[k][0]*uu+e[k][1]*vv);
+						//ff.assign(i,j,k) = AA*F(i,j,ne[k]) +BB*f(i,j,ne[k]) + CC*w[k]*rho0*3.0/c*(e[k][0]*uu+e[k][1]*vv);
+						ff.assign(i,j,k) = AA*F(i,j,k) +BB*f(i,j,ne[k]) + CC*w[k]*rho0*3.0/c*(e[k][0]*uu+e[k][1]*vv);
 
 					}
 					
 					
 					else
 					
-					ff[i][j][k]=F[ip][jp][k];			
+					ff.assign(i,j,k)=F(ip,jp,k);			
 				}
 
 			}
@@ -319,27 +314,27 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 
      for(i=(NX+1)/4-3;i<=(NX+1)/4*3+3;i++) 
 		for(j=(NY+1)/4-3;j<=(NY+1)/4*3+3;j++) 
-		if(flag[i][j]==1)
+		if(flag(i,j)==1)
         { 
 			
-          rho[i][j]=0; 
-          u[i][j][0]=0; 
-          u[i][j][1]=0; 
+          rho.assign(i,j)=0; 
+          u.assign(i,j,0)=0; 
+          u.assign(i,j,1)=0; 
 		
           for(k=0;k<Q;k++) 
           { 
-            f[i][j][k] = ff[i][j][k];
-            rho[i][j]+=f[i][j][k]; 
-            u[i][j][0]+=c*e[k][0]*f[i][j][k]; 
-            u[i][j][1]+=c*e[k][1]*f[i][j][k]; 
+            f.assign(i,j,k) = ff(i,j,k);
+            rho.assign(i,j)+=f(i,j,k); 
+            u.assign(i,j,0)+=c*e[k][0]*f(i,j,k); 
+            u.assign(i,j,1)+=c*e[k][1]*f(i,j,k); 
           } 
 
 
           //u[i][j][0]/=rho[i][j]; 
           //u[i][j][1]/=rho[i][j]; 
 
-		  u[i][j][0]/=rho0; 
-          u[i][j][1]/=rho0; 
+		  u.assign(i,j,0)/=rho0; 
+          u.assign(i,j,1)/=rho0; 
 
         
 		} 
@@ -359,12 +354,12 @@ for(i=(NX+1)/4-3;  i<=(NX+1)/4*3+3;  i++)
 
 
 
-void comput_q (int i, int j, int ip, int jp)  // compute the ratio $gamma$, the computed value is 'q', which is equal to gamma * dx
+void comput_q (int i, int j, int ip, int jp)  // 2 is the ordinary coordinate/grid
 {
      if (ip==i)
 	 {   
-		 yy1  = fabs( Center_y+sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
-		 yy2  = fabs( Center_y-sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
+		 yy1  = fabs( Center_y+sqrt( (R*R-(xlabel(i,j)-Center_x)*(xlabel(i,j)-Center_x))/ell )-ylabel(i,j) );
+		 yy2  = fabs( Center_y-sqrt( (R*R-(xlabel(i,j)-Center_x)*(xlabel(i,j)-Center_x))/ell )-ylabel(i,j) );
 
 		 if(yy1<=yy2) q=yy1;
 		 else q=yy2;
@@ -373,14 +368,14 @@ void comput_q (int i, int j, int ip, int jp)  // compute the ratio $gamma$, the 
 
 	 else
 	 {
-         kk  =  (ylabel[ip][jp]-ylabel[i][j])/(xlabel[ip][jp]-xlabel[i][j]);
+         kk  =  (ylabel(ip,jp)-ylabel(i,j))/(xlabel(ip,jp)-xlabel(i,j));
 		 
-		 b   =  (  2.0*Center_x - 2.0*ell*kk*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)  ) / (ell*kk*kk+1.0);
+		 b   =  (  2.0*Center_x - 2.0*ell*kk*(ylabel(i,j)-kk*xlabel(i,j)-Center_y)  ) / (ell*kk*kk+1.0);
 
-		 cc  =  ( ell*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)+Center_x*Center_x-R*R  ) / (ell*kk*kk+1.0);  //注意derta>=0
+		 cc  =  ( ell*(ylabel(i,j)-kk*xlabel(i,j)-Center_y)*(ylabel(i,j)-kk*xlabel(i,j)-Center_y)+Center_x*Center_x-R*R  ) / (ell*kk*kk+1.0);  
 
-         x1  =  fabs( (b+sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
-         x2  =  fabs( (b-sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
+         x1  =  fabs( (b+sqrt(b*b-4.0*cc))/2.0-xlabel(i,j) );
+         x2  =  fabs( (b-sqrt(b*b-4.0*cc))/2.0-xlabel(i,j) );
 
 		 if(x1<=x2) q=x1;
 		 else q=x2;
@@ -391,7 +386,7 @@ void comput_q (int i, int j, int ip, int jp)  // compute the ratio $gamma$, the 
 
 
 
-        void output(int m)    //output the data
+        void output(int m)    // output
         { 
           ostringstream name; 
           name<<"TaylorGreen"<<"Re_"<<Re<<"网格"<<NX<<"_"<<NY<<"迭代_"<<m<<"次"".dat"; 
@@ -401,7 +396,7 @@ void comput_q (int i, int j, int ip, int jp)  // compute the ratio $gamma$, the 
             for(j=0;j<=NY;j++) 
               for(i=0;i<=NX;i++) 
               { 
-                out<<setprecision(15)<<xlabel[i][j]<<" "<<ylabel[i][j]<<" "<<u[i][j][0]<<" "<<  u[i][j][1]<<" "<<u0[i][j][0]<<" "<<  u0[i][j][1]<<" "<<rho[i][j]<<endl; 
+                out<<setprecision(15)<<xlabel(i,j)<<" "<<ylabel(i,j)<<" "<<u(i,j,0)<<" "<<  u(i,j,1)<<" "<<u0(i,j,0)<<" "<<  u0(i,j,1)<<" "<<rho(i,j)<<endl; 
 			//	cout<<rho[i][j]<<endl;
               } 
 
@@ -410,7 +405,7 @@ void comput_q (int i, int j, int ip, int jp)  // compute the ratio $gamma$, the 
  
       
 		
-		void Error()   //compute error
+		void Error()   // calculate relative error
         { 
           double temp1,temp2; 
           temp1=0; 
@@ -419,16 +414,16 @@ void comput_q (int i, int j, int ip, int jp)  // compute the ratio $gamma$, the 
           for(i=1;i<NX;i++) 
             for(j=1;j<NY;j++)
 			{
-			   if(flag[i][j]==1)
+			   if(flag(i,j)==1)
 			   {
 				 
 				
-                  u0[i][j][0]=-U*cos(xlabel[i][j]*2.0*pi)*sin(ylabel[i][j]*2.0*pi)*exp(-8.0*niu*pi*pi*(n)*dt);
-				  u0[i][j][1]= U*cos(ylabel[i][j]*2.0*pi)*sin(xlabel[i][j]*2.0*pi)*exp(-8.0*niu*pi*pi*(n)*dt);
+                  u0.assign(i,j,0)=-U*cos(xlabel(i,j)*2.0*pi)*sin(ylabel(i,j)*2.0*pi)*exp(-8.0*niu*pi*pi*(n)*dt);
+				  u0.assign(i,j,1)= U*cos(ylabel(i,j)*2.0*pi)*sin(xlabel(i,j)*2.0*pi)*exp(-8.0*niu*pi*pi*(n)*dt);
 
 
-                  temp1+=( (u[i][j][0]-u0[i][j][0])*(u[i][j][0]-u0[i][j][0])+(u[i][j][1]-u0[i][j][1])*(u[i][j][1]-u0[i][j][1])); 
-                  temp2+=(u0[i][j][0]*u0[i][j][0]+u0[i][j][1]*u0[i][j][1]); 
+                  temp1+=( (u(i,j,0)-u0(i,j,0))*(u(i,j,0)-u0(i,j,0))+(u(i,j,1)-u0(i,j,1))*(u(i,j,1)-u0(i,j,1))); 
+                  temp2+=(u0(i,j,0)*u0(i,j,0)+u0(i,j,1)*u0(i,j,1)); 
 			      
 		
 				
