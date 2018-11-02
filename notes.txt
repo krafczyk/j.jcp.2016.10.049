@@ -5,6 +5,8 @@ Tables [20] 1: 2*10
 Numbers [0]
 Total [67]
 
+Total Score: [134]
+
 --- Log ---
 
 00:00:00: Start Asset count
@@ -18,35 +20,35 @@ Total: [0(0%)]@00:00:00
 00:06:15: Asset count finished
 00:33:00: I seem to be getting correct values for the upper left plot of Figure 3. I now need to automate this procedure a little bit and produce the plots as well.
 
-F3: (1+0*4)+(0*5)+(0*2)+(0*5)+(0*1)+(0*5)
+F3: (2+0*4)+(0*5)+(0*2)+(0*5)+(0*1)+(0*5)
 F4: (0*3)+(0*5)
 F5: (0*8)
 F6: (0*3)+(0*5)
 T1: (0*20)
-Total: [1(1.5%)]@00:33:00
+Total: [2(1.5%)]@00:33:00
 
 01:00:00: Started process of adding arguments to programs
 01:56:00: Poiseuille nonconvex program now has arguments, need to script it. I also adjusted the output so it could be run several times in succession and create a .csv file.
 02:33:00: Building a script to use gnu parallel to execute all the experiments in a parallelized fashion
 03:39:00: Finished building script, it takes quite a while. maybe 12 hours with 4 threads? I'll need to time it. I've now finished the nonconvex plots in Figure 3. They all seem to match exactly.
 
-F3: (1*5)+(0*5)+(1*2)+(0*5)+(1*1)+(0*5)
+F3: (2*5)+(0*5)+(2*2)+(0*5)+(2*1)+(0*5)
 F4: (0*3)+(0*5)
 F5: (0*8)
 F6: (0*3)+(0*5)
 T1: (0*20)
-Total: [8(11.9%)]@03:39:00
+Total: [16(11.9%)]@03:39:00
 
 06:13:00: Trying to fix the taylor vortex problem, but I've run into a nan issue. I'm assuming for now that there is a change I made somewhere which resulted in this nan, but I need to study and fix the issue.
 07:14:00: I've found that the solution is becoming singular... I'll have to think about how to solve this.
 08:01:00: The jobs for Figure3 convex equation finished. They took nearly 2 days to finish running. I've now perfectly replicated Figure 3.
 
-F3: (1*5)+(1*5)+(1*2)+(1*5)+(1*1)+(1*5)
+F3: (2*5)+(2*5)+(2*2)+(2*5)+(2*1)+(2*5)
 F4: (0*3)+(0*5)
 F5: (0*8)
 F6: (0*3)+(0*5)
 T1: (0*20)
-Total: [23(34.3%)]@08:01:00
+Total: [46(34.3%)]@08:01:00
 
 08:06:00: The Couette flow example is also plagued by nan and inf issues. Its possible that this is related to the stability of the problem. I'm double checking the set parameters to make sure everything is set properly.
 08:10:00: I've started reading the article in depth to understand how to properly debug the inf/nan issues I'm seeing with the second two examples.
@@ -72,3 +74,13 @@ The correctly encoded text is a mixture of korean and chinese characters, mostly
 16:17:00: Close inspection of the code I received, verifying compilation and running at each stage, it seems that changing the vortex code to s_v = 8*(2+s_q)/(8+s_q) causes the nan issue. I'm not sure why its doing this. I'm going to send an email to the authors asking.
 16:29:00: I tried increasing the precision level to quad, however that didn't work.
 16:29:00: The authors have gotten back to me, They claim they also can't get the solution to work for tau=3.0. They think they forgot to switch the scheme back to their scheme from testing the BGK scheme. (Apparently BGK scheme is when s_nu = s_q) They say this shows one case where BGK is more stable.
+18:11:00: I've now completed Figure 4 minus the tau=3.0 line and also minus the point at Ny=139 for tau=2.0. For some reason that particular experiment was throwing nan as well.
+
+F3: (2*5)+(2*5)+(2*2)+(2*5)+(2*1)+(2*5)
+F4: (2*2+0*1)+(2*4+1*1)
+F5: (0*8)
+F6: (0*3)+(0*5)
+T1: (0*20)
+Total: [59(44.0%)]@18:11:00
+
+
