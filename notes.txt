@@ -83,4 +83,4 @@ F6: (0*3)+(0*5)
 T1: (0*20)
 Total: [59(44.0%)]@18:11:00
 
-
+19:13:00: In the Couette problem, there are actually two error variables, error and E_r. It seems at least at the end of the problem, error = 0, while E_r does not. I will assume that E_r is the value we want for error.
