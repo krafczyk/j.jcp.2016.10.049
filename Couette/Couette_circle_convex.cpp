@@ -71,7 +71,7 @@ int main(int argc, char** argv)
   std::string solution_filepath;
   bool header = false;
 
-  ArgParse::ArgParser Parser("Vortex Convex Simulation");
+  ArgParse::ArgParser Parser("Couette Flow Convex Simulation");
   Parser.AddArgument("--beta", "Set the value for beta", &beta, ArgParse::Argument::Required);
   Parser.AddArgument("--tau", "Set the value for tau", &tau, ArgParse::Argument::Required);
   Parser.AddArgument("--Ny", "Set the y resolution Ny", &Ny, ArgParse::Argument::Required);
@@ -114,11 +114,13 @@ int main(int argc, char** argv)
 
 	if(n>10 && n%100==0)
 	{
+		if (verbose) {
       cout<<"The"<<n<<"th computational result:"<<endl<<"The u,v of point (NX/2,NY/2)is : " 
      
       <<setprecision(6)<<u(NX/2,NY/2,0)<<","<<u(NX/2,NY/2,1)<<endl; 
       cout<<"The max relative error of uv is:" 
         <<setiosflags(ios::scientific)<<error<<" "<<E_r<<endl;         
+		}
 	} 
 
 
@@ -128,10 +130,18 @@ int main(int argc, char** argv)
 	if(error<1.0e-10) 
 	{
         Error();
+	if (verbose) {
 		cout<<"The max relative error of uv is:" 
         <<setiosflags(ios::scientific)<<error<<" "<<E_r<<endl; 
+	}
 
+	if(dump_solution_passed) {
 		output(n+1);
+	}
+        if(header) {
+          printf("\"Lattice Size\", \"NY\", \"Beta\", \"Tau\", \"Error\"\n");
+       	}
+       	printf("%.14f, %i, %.14f, %.14f, %.14f\n",dx, NY,beta,tau,E_r);
 		break;
 	}
 
@@ -156,7 +166,9 @@ void init(double tau)
   dt=(SS -0.5)/3.0 *dx*dx /niu;
   c=dx/dt;
 
+  if (verbose) {
   cout<<"U/c = "<<U/c<<"\n";
+  }
 
 
   R2=Lx/2.0;  // radius 
