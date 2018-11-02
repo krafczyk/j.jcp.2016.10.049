@@ -6,9 +6,9 @@
 
 #include<string.h> 
 #include<stdio.h> 
+#include <string>
 #include "ArgParseStandalone.h"
 #include "utilities.h"
-#include <string>
  
 
 const int Q=9; 
@@ -21,23 +21,23 @@ const int e[Q][2]={{0,0},{1,0},{0,1},{-1,0},{0,-1},{1,1},{-1,1},{-1,-1},{1,-1}};
 const int ne[Q]={0,3,4,1,2,7,8,5,6};                                                // back direction
 const double w[Q]={4.0/9,1.0/9,1.0/9,1.0/9,1.0/9,1.0/36,1.0/36,1.0/36,1.0/36}; 
 
-double** rho = NULL;
-double*** u = NULL;
-double*** f = NULL;
-double*** F = NULL;
-double*** ff = NULL;
-double** xlabel = NULL;
-double** ylabel = NULL;
+Array2D<double> rho;
+Array3D<double> u;
+Array3D<double> f;
+Array3D<double> F;
+Array3D<double> ff;
+Array2D<double> xlabel;
+Array2D<double> ylabel;
 double* u_exact = NULL;
-double*** u0 = NULL;
-int** flag = NULL;
+Array3D<double> u0;
+Array2D<int> flag;
 
 int i,j,k,ip,jp,n; 
 double c,Re,dx,dy,Lx,Ly,dt,rho0,P0,s_nu,s_q,SS,niu,error,Force,U_max,U_s,cs_2,rela_error,ERROR; 
 double a1,a2,a3,a4,a5,q_up,q_down;
  
 void init(double gamma, double tau); 
-double feq(int k,double rho,double u[2]); 
+double feq(int k,double rho,double u_0, double u_1); 
 void evolution(); 
 void output(int m); 
 void Error(); 
@@ -74,26 +74,26 @@ int main(int argc, char** argv)
   NY=Ny; 
   NX=2*(NY-1); 
 
-  rho = New2DArray<double>(NX+1,NY+1);
-  u = New3DArray<double>(NX+1,NY+1,2);
-  f = New3DArray<double>(NX+1,NY+1,Q);
-  F = New3DArray<double>(NX+1,NY+1,Q);
-  ff = New3DArray<double>(NX+1,NY+1,Q);
-  xlabel = New2DArray<double>(NX+1,NY+1);
-  ylabel = New2DArray<double>(NX+1,NY+1);
+  rho.init(NX+1,NY+1);
+  u.init(NX+1,NY+1,2);
+  f.init(NX+1,NY+1,Q);
+  F.init(NX+1,NY+1,Q);
+  ff.init(NX+1,NY+1,Q);
+  xlabel.init(NX+1,NY+1);
+  ylabel.init(NX+1,NY+1);
   u_exact = new double[NY+1]; 
-  u0 = New3DArray<double>(NX+1,NY+1,2);
-  flag = New2DArray<int>(NX+1,NY+1);
+  u0.init(NX+1,NY+1,2);
+  flag.init(NX+1,NY+1);
 
   for (i=0;i<=NX;i++)    //tag different boundary
 	  for (j=0;j<=NY;j++)
 	  {
-		  if      (j==0)   flag[i][j]=1;  //Up and Down Boundary
-		  else if (j==NY)  flag[i][j]=5;  //Up and Down Boundary
+		  if      (j==0)   flag.assign(i,j)=1;  //Up and Down Boundary
+		  else if (j==NY)  flag.assign(i,j)=5;  //Up and Down Boundary
 
-		  else if (i==0)   flag[i][j]=2;
-          else if (i==NX)  flag[i][j]=3; 
-		  else  		   flag[i][j]=4;
+		  else if (i==0)   flag.assign(i,j)=2;
+          else if (i==NX)  flag.assign(i,j)=3; 
+		  else  		   flag.assign(i,j)=4;
 
 	  }
 
@@ -141,16 +141,7 @@ int main(int argc, char** argv)
      }   
   } 
 
-  Delete2DArray<double>(rho, NX+1,NY+1);
-  Delete3DArray<double>(u, NX+1,NY+1,2);
-  Delete3DArray<double>(f, NX+1,NY+1,Q);
-  Delete3DArray<double>(F, NX+1,NY+1,Q);
-  Delete3DArray<double>(ff, NX+1,NY+1,Q);
-  Delete2DArray<double>(xlabel, NX+1,NY+1);
-  Delete2DArray<double>(ylabel, NX+1,NY+1);
   delete[] u_exact; 
-  Delete3DArray<double>(u0, NX+1,NY+1,2);
-  Delete2DArray<int>(flag, NX+1,NY+1);
 
   return 0;      
 } 
@@ -226,18 +217,18 @@ void init(double gamma, double tau)
 	  for(j=0;j<=NY;j++)
 	  {
 
-		   xlabel[i][j]=i*dx;
+		   xlabel.assign(i,j)=i*dx;
 
-		   ylabel[i][j]=(j-1)*dy+q_down*dy;
+		   ylabel.assign(i,j)=(j-1)*dy+q_down*dy;
 
-		   ylabel[i][0]=0.0;
-		   ylabel[i][NY] = Ly;
+		   ylabel.assign(i,0)=0.0;
+		   ylabel.assign(i,NY) = Ly;
 
 	  }
 
    for(j=0;j<=NY;j++)
    {
-	   u_exact[j]=4.0*U_max*(1.0-ylabel[0][j]/Ly)*ylabel[0][j]/Ly;  //anlytical solution
+	   u_exact[j]=4.0*U_max*(1.0-ylabel(0,j)/Ly)*ylabel(0,j)/Ly;  //anlytical solution
    }
  
 
@@ -247,25 +238,25 @@ void init(double gamma, double tau)
   for(i=0;i<=NX;i++)    //  initialization of DF
     for(j=0;j<=NY;j++) 
     { 
-      u[i][j][0]=0; 
-      u[i][j][1]=0; 
+      u.assign(i,j,0)=0; 
+      u.assign(i,j,1)=0; 
    
-      rho[i][j]=1.0;
+      rho.assign(i,j)=1.0;
      
       for(k=0;k<Q;k++) 
        { 
-         f[i][j][k]=feq(k,rho[i][j],u[i][j]); 
+         f.assign(i,j,k)=feq(k,rho(i,j),u(i,j,0), u(i,j,1)); 
        }
  
     } 
 } 
 
  
-double feq(int k,double rho,double u[2])   //  equilibrium distribution
+double feq(int k,double rho,double u_0, double u_1)   //  equilibrium distribution
 { 
   double eu,uv,feq; 
-  eu=(e[k][0]*u[0]+e[k][1]*u[1]); 
-  uv=(u[0]*u[0]+u[1]*u[1]); 
+  eu=(e[k][0]*u_0+e[k][1]*u_1); 
+  uv=(u_0*u_0+u_1*u_1); 
   feq=w[k]*rho*(1.0+3.0*eu/c+4.5*eu*eu/(c*c)-1.5*uv/(c*c)); 
   return feq; 
 } 
@@ -280,12 +271,11 @@ void evolution()
 		for(i=0;i<=NX;i++) 
 	    {
 			for(k=0;k<Q;k++) 
-				F[i][j][k]=f[i][j][k]
+				F.assign(i,j,k)=f(i,j,k)
 				           +
-				           s_nu*(  0.5*(f[i][j][k]+f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])+feq(ne[k],rho[i][j], u[i][j]))   )
+				           s_nu*(  0.5*(f(i,j,k)+f(i,j,ne[k])) - 0.5*(feq(k,rho(i,j), u(i,j,0), u(i,j,1))+feq(ne[k],rho(i,j), u(i,j,0), u(i,j,1)))   )
 						   +
-				           s_q*(  0.5*(f[i][j][k]-f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])-feq(ne[k],rho[i][j], u[i][j]))   )				
-				
+				           s_q*(  0.5*(f(i,j,k)-f(i,j,ne[k])) - 0.5*(feq(k,rho(i,j), u(i,j,0), u(i,j,1))-feq(ne[k],rho(i,j), u(i,j,0), u(i,j,1)))   )
 				           +dt*w[k]*Force*c*e[k][0]/cs_2;
 				           
 	    }
@@ -303,28 +293,28 @@ void evolution()
 
 					jp=j-e[k][1];
 					
-					if(flag[ip][jp]==4||flag[ip][jp]==2||flag[ip][jp]==3)    //inner fluid
-						ff[i][j][k]=F[ip][jp][k];
+					if(flag(ip,jp)==4||flag(ip,jp)==2||flag(ip,jp)==3)    //inner fluid
+						ff.assign(i,j,k)=F(ip,jp,k);
 
 
 
 					
 					
-					else if(flag[ip][jp]==5)
+					else if(flag(ip,jp)==5)
 
 					{
 					    a1=2.0*q_up/(1.0+2.0*q_up);
 						a2=1.0-a1;
-						ff[i][j][k] = a1 * ( F[i][j][k]-dt*w[k]*Force*c*e[k][0]/cs_2)  + a2*f[i][j][ne[k]];
+						ff.assign(i,j,k) = a1 * ( F(i,j,k)-dt*w[k]*Force*c*e[k][0]/cs_2)  + a2*f(i,j,ne[k]);
                     }
 
 
-					else if(flag[ip][jp]==1)
+					else if(flag(ip,jp)==1)
 
 					{
 						a1=2.0*q_down/(1.0+2.0*q_down);
 						a2=1.0-a1;
-						ff[i][j][k] = a1 * ( F[i][j][k]-dt*w[k]*Force*c*e[k][0]/cs_2)  + a2*f[i][j][ne[k]];
+						ff.assign(i,j,k) = a1 * ( F(i,j,k)-dt*w[k]*Force*c*e[k][0]/cs_2)  + a2*f(i,j,ne[k]);
 
                     }
                                                
@@ -340,24 +330,24 @@ void evolution()
         for(j=1;j<NY;j++) 
         { 
 
-          rho[i][j]=0; 
-          u[i][j][0]=0; 
-          u[i][j][1]=0; 
+          rho.assign(i,j)=0; 
+          u.assign(i,j,0)=0; 
+          u.assign(i,j,1)=0; 
           
 
           for(k=0;k<Q;k++) 
           { 
-			f[i][j][k]=ff[i][j][k];
-            rho[i][j]+=f[i][j][k]; 
-            u[i][j][0]+=c*e[k][0]*f[i][j][k]; /////////////////////////////////////////  c!=1
-            u[i][j][1]+=c*e[k][1]*f[i][j][k]; 
+			f.assign(i,j,k)=ff(i,j,k);
+            rho.assign(i,j)+=f(i,j,k); 
+            u.assign(i,j,0)+=c*e[k][0]*f(i,j,k); /////////////////////////////////////////  c!=1
+            u.assign(i,j,1)+=c*e[k][1]*f(i,j,k); 
           } 
           
       
     
 
-          u[i][j][0]=u[i][j][0]/rho[i][j] ; //+0.5*dt*Force/rho[i][j]; //   
-          u[i][j][1]/=rho[i][j]; 
+          u.assign(i,j,0)=u(i,j,0)/rho(i,j) ; //+0.5*dt*Force/rho[i][j]; //   
+          u.assign(i,j,1)/=rho(i,j); 
 
        } 
 
@@ -385,8 +375,8 @@ void Outdata(int m)
 
     for(i=0;i<=NX;i++) 
 	{
-		rho[i][0]=-q_down*rho[i][2]+(1.0+q_down)*rho[i][1];
-		rho[i][NY]=-q_up*rho[i][NY-2]+(1.0+q_up)*rho[i][NY-1];
+		rho.assign(i,0)=-q_down*rho(i,2)+(1.0+q_down)*rho(i,1);
+		rho.assign(i,NY)=-q_up*rho(i,NY-2)+(1.0+q_up)*rho(i,NY-1);
 	}
 	
 	
@@ -395,7 +385,7 @@ void Outdata(int m)
 			{
 				
 
-				fprintf(fm,"%f  %f   %lf  %lf  %lf  \n",xlabel[i][j], ylabel[i][j], u[i][j][0], u[i][j][1], rho[i][j]);
+				fprintf(fm,"%f  %f   %lf  %lf  %lf  \n",xlabel(i,j), ylabel(i,j), u(i,j,0), u(i,j,1), rho(i,j));
 			}
 
 	
@@ -421,15 +411,15 @@ void Outdata(int m)
 
              
 
-              temp1+=(  (u[i][j][0]-u_exact[j] )*(u[i][j][0]-u_exact[j])  +  u[i][j][1]*u[i][j][1]  )  ; 
+              temp1+=(  (u(i,j,0)-u_exact[j] )*(u(i,j,0)-u_exact[j])  +  u(i,j,1)*u(i,j,1)  )  ; 
               temp2+=(u_exact[j]*u_exact[j])  ;
 
 
-			  temp3+=(  (u[i][j][0]-u0[i][j][0] )*(u[i][j][0]-u0[i][j][0])  +  (u[i][j][1]-u0[i][j][1])*(u[i][j][1]-u0[i][j][1])  )  ; 
-              temp4+=(u[i][j][0]*u[i][j][0] + u[i][j][1]*u[i][j][1])  ;
+			  temp3+=(  (u(i,j,0)-u0(i,j,0) )*(u(i,j,0)-u0(i,j,0))  +  (u(i,j,1)-u0(i,j,1))*(u(i,j,1)-u0(i,j,1))  )  ; 
+              temp4+=(u(i,j,0)*u(i,j,0) + u(i,j,1)*u(i,j,1))  ;
 
-			  u0[i][j][0] = u[i][j][0];
-			  u0[i][j][1] = u[i][j][1];
+			  u0.assign(i,j,0) = u(i,j,0);
+			  u0.assign(i,j,1) = u(i,j,1);
             } 
 
 
