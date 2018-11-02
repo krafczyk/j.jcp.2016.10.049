@@ -8,6 +8,8 @@
 #include<sstream> 
 #include<string> 
 #include<stdio.h> 
+#include "utilities.h"
+#include "ArgParseStandalone.h"
  
 using namespace std; 
 const int Q=9; 
@@ -22,7 +24,15 @@ const double beta=0.5;
 int e[Q][2]={{0,0},{1,0},{0,1},{-1,0},{0,-1},{1,1},{-1,1},{-1,-1},{1,-1}};       //9个方向
 int ne[Q]={0,3,4,1,2,7,8,5,6};                                                //用于标记反方向
 double w[Q]={4.0/9,1.0/9,1.0/9,1.0/9,1.0/9,1.0/36,1.0/36,1.0/36,1.0/36}; 
-double rho[NX+1][NY+1],u[NX+1][NY+1][2],u0[NX+1][NY+1][2],f[NX+1][NY+1][Q],ff[NX+1][NY+1][Q],F[NX+1][NY+1][Q],xlabel[NX+1][NY+1],ylabel[NX+1][NY+1]; 
+//double rho[NX+1][NY+1],u[NX+1][NY+1][2],u0[NX+1][NY+1][2],f[NX+1][NY+1][Q],ff[NX+1][NY+1][Q],F[NX+1][NY+1][Q],xlabel[NX+1][NY+1],ylabel[NX+1][NY+1]; 
+Array2D<double> rho;
+Array3D<double> u;
+Array3D<double> u0;
+Array3D<double> f;
+Array3D<double> ff;
+Array3D<double> F;
+Array2D<double> xlabel;
+Array2D<double> ylabel; 
 int i,j,k,ip,jp,n,q_flag; 
 double c,Re,dx,dy,Lx,Ly,D,dt,rho0,p0,tau_f,niu,error,E_r,y,yy1,yy2,kk,b,cc,x1,x2,x,q; 
 
@@ -41,11 +51,12 @@ void comput_q (int i, int j, int ip, int jp, double R);
 
  
 void init(); 
-double feq(int k,double rho,double u[2]); 
+double feq(int k,double rho,double u_0, double u_1); 
 void evolution(); 
 void output(int m); 
 void Error(); 
-int flag[NX+1][NY+1];
+//int flag[NX+1][NY+1];
+Array2D<int> flag;
 
 
 // void outdata();
@@ -54,7 +65,15 @@ int main()
 { 
   using namespace std; 
 
-  
+  rho.init(NX+1,NY+1);
+  u.init(NX+1,NY+1,2);
+  u0.init(NX+1,NY+1,2);
+  f.init(NX+1,NY+1,Q);
+  ff.init(NX+1,NY+1,Q);
+  F.init(NX+1,NY+1,Q);
+  xlabel.init(NX+1,NY+1);
+  ylabel.init(NX+1,NY+1); 
+  flag.init(NX+1,NY+1);
 
   init();  //初始化
 
@@ -71,7 +90,7 @@ int main()
 	{
       cout<<"The"<<n<<"th computation result:"<<endl<<"The u,v of point (NX/2,NY/2)is : " 
      
-      <<setprecision(6)<<u[NX/2][NY/2][0]<<","<<u[NX/2][NY/2][1]<<endl; 
+      <<setprecision(6)<<u(NX/2,NY/2,0)<<","<<u(NX/2,NY/2,1)<<endl; 
       cout<<"The max relative error of uv is:" 
         <<setiosflags(ios::scientific)<<error<<" "<<E_r<<endl; 
        
@@ -129,8 +148,8 @@ void init()
   for(i=0;i<=NX;i++)    //格点坐标
   for(j=0;j<=NY;j++) 
   {
-	  xlabel[i][j]=(i-NX/2)*dx ;
-	  ylabel[i][j]=(j-NY/2)*dy ;
+	  xlabel.assign(i,j)=(i-NX/2)*dx ;
+	  ylabel.assign(i,j)=(j-NY/2)*dy ;
   }
 
   Center_x=0.0;
@@ -141,32 +160,32 @@ void init()
   for (i=0;i<=NX;i++)    //对flag进行赋值，将格点分类
 	  for (j=0;j<=NY;j++)
 	  {
-		  flag[i][j]=0;           // R1内部为0
+		  flag.assign(i,j)=0;           // R1内部为0
 
-		  if(    ( (  ell*(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x) + (ylabel[i][j]-Center_y)*(ylabel[i][j]-Center_y) ) <= R2*R2 )
-			  && ( (  ell*(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x) + (ylabel[i][j]-Center_y)*(ylabel[i][j]-Center_y) ) >= R1*R1 ))
+		  if(    ( (  ell*(xlabel(i,j)-Center_x)*(xlabel(i,j)-Center_x) + (ylabel(i,j)-Center_y)*(ylabel(i,j)-Center_y) ) <= R2*R2 )
+			  && ( (  ell*(xlabel(i,j)-Center_x)*(xlabel(i,j)-Center_x) + (ylabel(i,j)-Center_y)*(ylabel(i,j)-Center_y) ) >= R1*R1 ))
 		  {
-		        flag[i][j]=1;	   //环内部为1
+		        flag.assign(i,j)=1;	   //环内部为1
 		  }
 
-		  else if(    ( (  ell*(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x) + (ylabel[i][j]-Center_y)*(ylabel[i][j]-Center_y) ) > R2*R2 ) )
+		  else if(    ( (  ell*(xlabel(i,j)-Center_x)*(xlabel(i,j)-Center_x) + (ylabel(i,j)-Center_y)*(ylabel(i,j)-Center_y) ) > R2*R2 ) )
 
-			     flag[i][j] = 2;   //R2外面为2
+			     flag.assign(i,j) = 2;   //R2外面为2
 	  }
   
  
   for(i=0;i<=NX;i++)    //速度初始化
     for(j=0;j<=NY;j++) 
-	if(flag[i][j]==1)
+	if(flag(i,j)==1)
     {
 		
-      u[i][j][0]= 0.0; 
-      u[i][j][1]= 0.0; 
-      rho[i][j]= rho0; 
+      u.assign(i,j,0)= 0.0; 
+      u.assign(i,j,1)= 0.0; 
+      rho.assign(i,j)= rho0; 
 
       for(k=0;k<Q;k++) 
       { 
-        f[i][j][k]=feq(k,rho[i][j],u[i][j]); 
+        f.assign(i,j,k)=feq(k,rho(i,j),u(i,j,0), u(i,j,1)); 
       } 
     }
 
@@ -176,11 +195,11 @@ void init()
 
 
  
-double feq(int k,double rho,double u[2])   // 计算平衡态分布函数
+double feq(int k,double rho,double u_0, double u_1)   // 计算平衡态分布函数
 { 
   double eu,uv,feq; 
-  eu=(e[k][0]*u[0]+e[k][1]*u[1]); 
-  uv=(u[0]*u[0]+u[1]*u[1]); 
+  eu=(e[k][0]*u_0+e[k][1]*u_1); 
+  uv=(u_0*u_0+u_1*u_1); 
   //feq=w[k]*rho*(1.0+3.0*eu/c+4.5*eu*eu/c/c-1.5*uv/c/c); 
   feq=w[k]*(rho + rho0* (3.0*eu/c+4.5*eu*eu/c/c-1.5*uv/c/c) ); 
   return feq; 
@@ -195,21 +214,21 @@ void evolution()
   
  for(i=0;i<=NX;i++)    
     for(j=0;j<=NY;j++) 
-		if(flag[i][j]==1)
+		if(flag(i,j)==1)
 		{
 			for(k=0;k<Q;k++) 
-				F[i][j][k]=f[i][j][k]
+				F.assign(i,j,k)=f(i,j,k)
 				           +
-				           s_nu*(  0.5*(f[i][j][k]+f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])+feq(ne[k],rho[i][j], u[i][j]))   )
+				           s_nu*(  0.5*(f(i,j,k)+f(i,j,ne[k])) - 0.5*(feq(k,rho(i,j), u(i,j,0), u(i,j,1))+feq(ne[k],rho(i,j), u(i,j,0), u(i,j,1)))   )
 						   +
-				           s_q*(  0.5*(f[i][j][k]-f[i][j][ne[k]]) - 0.5*(feq(k,rho[i][j], u[i][j])-feq(ne[k],rho[i][j], u[i][j]))   );    
+				           s_q*(  0.5*(f(i,j,k)-f(i,j,ne[k])) - 0.5*(feq(k,rho(i,j), u(i,j,0), u(i,j,1))-feq(ne[k],rho(i,j), u(i,j,0), u(i,j,1)))   );    
 			//碰撞
 		}
 	
 
  for(i=0;i<=NX;i++)    
     for(j=0;j<=NY;j++) 
-		if(flag[i][j]==1)
+		if(flag(i,j)==1)
 		{
 				for(k=0;k<Q;k++) 
 				{
@@ -217,7 +236,7 @@ void evolution()
 					jp=j-e[k][1];
 				
 
-					if( flag[ip][jp]==0 )
+					if( flag(ip,jp)==0 )
 					{
 					   
 						comput_q(ip,jp,i,j,R1);   //求的是(ip,jp)到园边界的距离
@@ -230,8 +249,8 @@ void evolution()
 
 					   //cout<<"iq="<<iq<<"jq="<<jq<<endl;
 
-					   iq=xlabel[i][j]-(dx-q)*double(e[k][0]);
-					   jq=ylabel[i][j]-(dx-q)*double(e[k][1]);
+					   iq=xlabel(i,j)-(dx-q)*double(e[k][0]);
+					   jq=ylabel(i,j)-(dx-q)*double(e[k][1]);
 
 
 						q = 1.0 - q/dx;     //用1减，就得到了(i,j)到园边界的距离，这是需要的
@@ -248,12 +267,12 @@ void evolution()
 						BB = 1.0-AA;
 						CC = 2.0;
 
-						ff[i][j][k] = AA*F[i][j][ne[k]] +BB*f[i][j][ne[k]] + CC*w[k]*rho0*3.0/c*(e[k][0]*uu+e[k][1]*vv);
+						ff.assign(i,j,k) = AA*F(i,j,ne[k]) +BB*f(i,j,ne[k]) + CC*w[k]*rho0*3.0/c*(e[k][0]*uu+e[k][1]*vv);
 
 					}
 					
 					
-					else if(flag[ip][jp]==2)
+					else if(flag(ip,jp)==2)
 						{
 					   
 						comput_q(i,j,ip,jp,R2);   //求的是(i,j)到圆边界的距离
@@ -272,13 +291,13 @@ void evolution()
 						BB = 1.0-AA;
 						CC = 2.0;
 
-						ff[i][j][k] = AA*F[i][j][ne[k]] +BB*f[i][j][ne[k]] ; // + CC*w[k]*rho0*3.0/c*(e[k][0]*uu+e[k][1]*vv) = 0
+						ff.assign(i,j,k) = AA*F(i,j,ne[k]) +BB*f(i,j,ne[k]) ; // + CC*w[k]*rho0*3.0/c*(e[k][0]*uu+e[k][1]*vv) = 0
 
 					}
 
 					else
 
-					ff[i][j][k]=F[ip][jp][k];					
+					ff.assign(i,j,k)=F(ip,jp,k);					
 
 				}
 			
@@ -289,23 +308,23 @@ void evolution()
 
 for(i=0;i<=NX;i++)    
     for(j=0;j<=NY;j++) 
-		if(flag[i][j]==1)
+		if(flag(i,j)==1)
         { 
 			
-          rho[i][j]=0; 
-          u[i][j][0]=0; 
-          u[i][j][1]=0; 
+          rho.assign(i,j)=0; 
+          u.assign(i,j,0)=0; 
+          u.assign(i,j,1)=0; 
 		
           for(k=0;k<Q;k++) 
           { 
-            f[i][j][k] = ff[i][j][k];
-            rho[i][j]+=f[i][j][k]; 
-            u[i][j][0]+=c*e[k][0]*f[i][j][k]; 
-            u[i][j][1]+=c*e[k][1]*f[i][j][k]; 
+            f.assign(i,j,k) = ff(i,j,k);
+            rho.assign(i,j)+=f(i,j,k); 
+            u.assign(i,j,0)+=c*e[k][0]*f(i,j,k); 
+            u.assign(i,j,1)+=c*e[k][1]*f(i,j,k); 
           } 
 
-		  u[i][j][0]/=rho0; 
-          u[i][j][1]/=rho0; 
+		  u.assign(i,j,0)/=rho0; 
+          u.assign(i,j,1)/=rho0; 
 
         
 		} 
@@ -320,8 +339,8 @@ void comput_q (int i, int j, int ip, int jp, double R)  //1表示大于0.5，-1表示小
 {
      if (ip==i)
 	 {   
-		 yy1  = fabs( Center_y+sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
-		 yy2  = fabs( Center_y-sqrt( (R*R-(xlabel[i][j]-Center_x)*(xlabel[i][j]-Center_x))/ell )-ylabel[i][j] );
+		 yy1  = fabs( Center_y+sqrt( (R*R-(xlabel(i,j)-Center_x)*(xlabel(i,j)-Center_x))/ell )-ylabel(i,j) );
+		 yy2  = fabs( Center_y-sqrt( (R*R-(xlabel(i,j)-Center_x)*(xlabel(i,j)-Center_x))/ell )-ylabel(i,j) );
 
 		 if(yy1<=yy2) q=yy1;
 		 else q=yy2;
@@ -330,14 +349,14 @@ void comput_q (int i, int j, int ip, int jp, double R)  //1表示大于0.5，-1表示小
 
 	 else
 	 {
-         kk  =  (ylabel[ip][jp]-ylabel[i][j])/(xlabel[ip][jp]-xlabel[i][j]);
+         kk  =  (ylabel(ip,jp)-ylabel(i,j))/(xlabel(ip,jp)-xlabel(i,j));
 		 
-		 b   =  (  2.0*Center_x - 2.0*ell*kk*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)  ) / (ell*kk*kk+1.0);
+		 b   =  (  2.0*Center_x - 2.0*ell*kk*(ylabel(i,j)-kk*xlabel(i,j)-Center_y)  ) / (ell*kk*kk+1.0);
 
-		 cc  =  ( ell*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)*(ylabel[i][j]-kk*xlabel[i][j]-Center_y)+Center_x*Center_x-R*R  ) / (ell*kk*kk+1.0);  //注意derta>=0
+		 cc  =  ( ell*(ylabel(i,j)-kk*xlabel(i,j)-Center_y)*(ylabel(i,j)-kk*xlabel(i,j)-Center_y)+Center_x*Center_x-R*R  ) / (ell*kk*kk+1.0);  //注意derta>=0
 
-         x1  =  fabs( (b+sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
-         x2  =  fabs( (b-sqrt(b*b-4.0*cc))/2.0-xlabel[i][j] );
+         x1  =  fabs( (b+sqrt(b*b-4.0*cc))/2.0-xlabel(i,j) );
+         x2  =  fabs( (b-sqrt(b*b-4.0*cc))/2.0-xlabel(i,j) );
 
 		 if(x1<=x2) q=x1;
 		 else q=x2;
@@ -358,7 +377,7 @@ void output(int m)    //输出
             for(j=0;j<=NY;j++) 
               for(i=0;i<=NX;i++) 
               { 
-                out<<setprecision(15)<<xlabel[i][j]<<" "<<ylabel[i][j]<<" "<<u[i][j][0]<<" "<<  u[i][j][1]<<" "<<u0[i][j][0]<<" "<<  u0[i][j][1]<<" "<<rho[i][j]<<" "<<flag[i][j]<<endl; 
+                out<<setprecision(15)<<xlabel(i,j)<<" "<<ylabel(i,j)<<" "<<u(i,j,0)<<" "<<  u(i,j,1)<<" "<<u0(i,j,0)<<" "<<  u0(i,j,1)<<" "<<rho(i,j)<<" "<<flag(i,j)<<endl; 
 		
               } 
 
@@ -368,7 +387,7 @@ void output(int m)    //输出
           ofstream out2(name2.str().c_str()); 
               for(i=ceil(R1/dx)+NX/2;  i<=NX-3 ; i++) 
               { 
-                out2<<setprecision(15)<<(xlabel[i][NY/2]-R1)/(R2-R1)<<" "<<  -u[i][NY/2][1]/U<<endl; 		
+                out2<<setprecision(15)<<(xlabel(i,NY/2)-R1)/(R2-R1)<<" "<<  -u(i,NY/2,1)/U<<endl; 		
               } 
 
 			  
@@ -386,25 +405,25 @@ void Error()   //计算相对误差
           for(i=1;i<NX;i++) 
             for(j=1;j<NY;j++)
 			{
-			   if(flag[i][j]==1)
+			   if(flag(i,j)==1)
 			   {
 				 
                   //u0[i][j][0]=-U*cos(xlabel[i][j]*2.0*pi)*sin(ylabel[i][j]*2.0*pi)*exp(-8.0*niu*pi*pi*(n)*dt);
 				  //u0[i][j][1]= U*cos(ylabel[i][j]*2.0*pi)*sin(xlabel[i][j]*2.0*pi)*exp(-8.0*niu*pi*pi*(n)*dt);
 
-                  temp1+=( (u[i][j][0]-u0[i][j][0])*(u[i][j][0]-u0[i][j][0])+(u[i][j][1]-u0[i][j][1])*(u[i][j][1]-u0[i][j][1])); 
-                  temp2+=(u0[i][j][0]*u0[i][j][0]+u0[i][j][1]*u0[i][j][1]); 	
+                  temp1+=( (u(i,j,0)-u0(i,j,0))*(u(i,j,0)-u0(i,j,0))+(u(i,j,1)-u0(i,j,1))*(u(i,j,1)-u0(i,j,1))); 
+                  temp2+=(u0(i,j,0)*u0(i,j,0)+u0(i,j,1)*u0(i,j,1)); 	
 
 
-				  u0[i][j][0] = u[i][j][0] ;
-				  u0[i][j][1] = u[i][j][1] ;
+				  u0.assign(i,j,0) = u(i,j,0) ;
+				  u0.assign(i,j,1) = u(i,j,1) ;
 
 
-				  R_temp = sqrt(xlabel[i][j]*xlabel[i][j] + ylabel[i][j]*ylabel[i][j]);
+				  R_temp = sqrt(xlabel(i,j)*xlabel(i,j) + ylabel(i,j)*ylabel(i,j));
 				  U_temp = U*beta/(1.0-beta*beta) * ( R2/R_temp - R_temp/R2  );
-				  uu =  U_temp* ylabel[i][j] / R_temp ;
-				  vv = -U_temp* xlabel[i][j] / R_temp ; 
-				  temp3+=( (u[i][j][0]-uu)*(u[i][j][0]-uu)+(u[i][j][1]-vv)*(u[i][j][1]-vv)); 
+				  uu =  U_temp* ylabel(i,j) / R_temp ;
+				  vv = -U_temp* xlabel(i,j) / R_temp ; 
+				  temp3+=( (u(i,j,0)-uu)*(u(i,j,0)-uu)+(u(i,j,1)-vv)*(u(i,j,1)-vv)); 
                   temp4+=(uu*uu+vv*vv); 
 				
 			   }
