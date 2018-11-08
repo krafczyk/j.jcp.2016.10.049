@@ -84,3 +84,4 @@ T1: (0*20)
 Total: [59(44.0%)]@18:11:00
 
 19:13:00: In the Couette problem, there are actually two error variables, error and E_r. It seems at least at the end of the problem, error = 0, while E_r does not. I will assume that E_r is the value we want for error.
+19:41:00: It turns out that the dx/h definition in the third problem is with respect to the radius in the paper and the whole domain in the code. This means I need to double the listed resolution values to get the listed h values in the article. I've redefined these resolution values and am re-running the simulations. I've also added the ability for the script to accept a job number
