@@ -93,12 +93,10 @@ plt.subplot(121)
 
 plt.plot([], color="#0000FF", linestyle="-", marker="v", markerfacecolor="None", label="$\\tau=1$")
 plt.plot([], color="#000000", linestyle="-", marker="d", markerfacecolor="None", label="$\\tau=2$")
-plt.plot([], color="#FF75FF", linestyle="-", marker="s", markerfacecolor="None", label="$\\tau=3$")
 plt.plot([], color="#000000", linestyle="--", label="Slope=2")
 
 plt.plot(make_log10(nonconvex_data_dict[1.0]['h']), make_log10(nonconvex_data_dict[1.0]['e']), color="#0000FF", linestyle="-", marker="v", markerfacecolor="None")
 plt.plot(make_log10(nonconvex_data_dict[2.0]['h']), make_log10(nonconvex_data_dict[2.0]['e']), color="#000000", linestyle="-", marker="v", markerfacecolor="None")
-plt.plot(make_log10(nonconvex_data_dict[3.0]['h']), make_log10(nonconvex_data_dict[3.0]['e']), color="#000000", linestyle="-", marker="v", markerfacecolor="None")
 slopeline = make_slope2line(slopeline_range[0], slopeline_range[1], -4)
 plt.plot(slopeline['x'], slopeline['y'], color="#000000", linestyle="--")
 
