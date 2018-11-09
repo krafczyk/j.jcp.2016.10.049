@@ -53,7 +53,8 @@ void comput_q (int i, int j, int ip, int jp, double R);
 void init(double tau); 
 double feq(int k,double rho,double u_0, double u_1); 
 void evolution(); 
-void output(int m); 
+void output_dump(const std::string& dump_path); 
+void output_trace(const std::string& trace_path); 
 void Error(); 
 //int flag[NX+1][NY+1];
 Array2D<int> flag;
@@ -69,6 +70,8 @@ int main(int argc, char** argv)
   int Ny = 0;
   bool dump_solution_passed = false;
   std::string solution_filepath;
+  bool dump_trace_passed = false;
+  std::string trace_filepath;
   bool header = false;
 
   ArgParse::ArgParser Parser("Couette Flow Convex Simulation");
@@ -76,6 +79,7 @@ int main(int argc, char** argv)
   Parser.AddArgument("--tau", "Set the value for tau", &tau, ArgParse::Argument::Required);
   Parser.AddArgument("--Ny", "Set the y resolution Ny", &Ny, ArgParse::Argument::Required);
   Parser.AddArgument("--dump-solution", "Filepath to dump solution at.", &solution_filepath, ArgParse::Argument::Optional, &dump_solution_passed);
+  Parser.AddArgument("--dump-trace", "Filepath to dump trace of solution at.", &trace_filepath, ArgParse::Argument::Optional, &dump_trace_passed);
   Parser.AddArgument("--header", "Whether or not to include column headers in the output", &header, ArgParse::Argument::Optional);
   Parser.AddArgument("--verbose", "Whether to print extra stuff", &verbose, ArgParse::Argument::Optional);
 
@@ -136,7 +140,10 @@ int main(int argc, char** argv)
 	}
 
 	if(dump_solution_passed) {
-		output(n+1);
+		output_dump(solution_filepath);
+	}
+	if(dump_trace_passed) {
+		output_trace(trace_filepath);
 	}
         if(header) {
           printf("\"Lattice Size\", \"NY\", \"Beta\", \"Tau\", \"Error\"\n");
@@ -386,11 +393,11 @@ void comput_q (int i, int j, int ip, int jp, double R)  //Compute the distance b
 
 
 
-void output(int m)    //output the data
+void output_dump(const std::string& dump_path)    //output the data
         { 
-          ostringstream name; 
-          name<<"TaylorGreen"<<"beta_"<<beta<<"Mesh"<<NX<<"_"<<NY<<"tau_"<<SS<<".dat"; 
-          ofstream out(name.str().c_str()); 
+          //ostringstream name; 
+          //name<<"TaylorGreen"<<"beta_"<<beta<<"Mesh"<<NX<<"_"<<NY<<"tau_"<<SS<<".dat"; 
+          ofstream out(dump_path.c_str()); 
           out<<"Title= \"TaylorGreen\"\n"<<"VARIABLES=\"X\",\"Y\",\"U\",\"V\",\"U0\",\"V0\",\"p\" ,\"flag\" \n"<<"ZONE T=\"BOX\",I=" 
             <<NX+1<<",J="<<NY+1<<",F=POINT"<<endl;
             for(j=0;j<=NY;j++) 
@@ -399,11 +406,13 @@ void output(int m)    //output the data
                 out<<setprecision(15)<<xlabel(i,j)<<" "<<ylabel(i,j)<<" "<<u(i,j,0)<<" "<<  u(i,j,1)<<" "<<u0(i,j,0)<<" "<<  u0(i,j,1)<<" "<<rho(i,j)<<" "<<flag(i,j)<<endl; 
 		
               } 
+	 }
 
+void output_trace(const std::string& trace_path) {
 
-		  ostringstream name2; 
-          name2<<"Computation_X_TaylorGreen"<<"beta_"<<beta<<"NX_"<<NX<<"NY_"<<NY<<"tau_"<<SS<<".dat"; 
-          ofstream out2(name2.str().c_str()); 
+		  //ostringstream name2; 
+          //name2<<"Computation_X_TaylorGreen"<<"beta_"<<beta<<"NX_"<<NX<<"NY_"<<NY<<"tau_"<<SS<<".dat"; 
+          ofstream out2(trace_path.c_str()); 
               for(i=ceil(R1/dx)+NX/2;  i<=NX-3 ; i++) 
               { 
                 out2<<setprecision(15)<<(xlabel(i,NY/2)-R1)/(R2-R1)<<" "<<  -u(i,NY/2,1)/U<<endl; 		
