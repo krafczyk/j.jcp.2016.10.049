@@ -102,3 +102,15 @@ F5: (2*4+0*4)
 F6: (1*2+0*1)+(2*4+1*1)
 T1: (0*20)
 Total: [59(58.2%)]@20:41:00
+
+21:19:00: I found another error. Apparently, the legend in Figure 5 is reversed. the red circles should be beta = 0.1, and the pink circles should be beta = 0.8.
+21:39:00: Figure 5 is now complete!
+
+F3: (2*5)+(2*5)+(2*2)+(2*5)+(2*1)+(2*5)
+F4: (2*2+0*1)+(2*4+1*1)
+F5: (2*8)
+F6: (1*2+0*1)+(2*4+1*1)
+T1: (0*20)
+Total: [59(64.2%)]@21:39:00
+
+21:40:00: I discovered my Figure 6 script was actually using the Taylor Green code. I'm going to re-run it now while I start on Table 1.
