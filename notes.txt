@@ -85,3 +85,11 @@ Total: [59(44.0%)]@18:11:00
 
 19:13:00: In the Couette problem, there are actually two error variables, error and E_r. It seems at least at the end of the problem, error = 0, while E_r does not. I will assume that E_r is the value we want for error.
 19:41:00: It turns out that the dx/h definition in the third problem is with respect to the radius in the paper and the whole domain in the code. This means I need to double the listed resolution values to get the listed h values in the article. I've redefined these resolution values and am re-running the simulations. I've also added the ability for the script to accept a job number
+19:55:00: Figure 6 is as complete as its going to get. Here, we've got mostly the same plot except for the convex method, the tau=0.505 is lower than tau=0.6 which is opposite of what the article shows. I'll rate the tau=0.505 line at a 1 for that. Additionally, the nonconvex lines are getting many -nan values. This has eliminated the tau=3 line, and removed data points from both the tau=1 and tau=2 lines. I'll rate both of those as 1.
+
+F3: (2*5)+(2*5)+(2*2)+(2*5)+(2*1)+(2*5)
+F4: (2*2+0*1)+(2*4+1*1)
+F5: (0*8)
+F6: (1*2+0*1)+(2*4+1*1)
+T1: (0*20)
+Total: [59(52.2%)]@18:11:00
