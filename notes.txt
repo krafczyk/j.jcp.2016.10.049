@@ -92,4 +92,13 @@ F4: (2*2+0*1)+(2*4+1*1)
 F5: (0*8)
 F6: (1*2+0*1)+(2*4+1*1)
 T1: (0*20)
-Total: [59(52.2%)]@18:11:00
+Total: [59(52.2%)]@19:55:00
+
+20:41:00: Started a plotting script for Figure 5. I did the simplest thing first which was to plot the analytic solutions which are in the plot. These match perfectly.
+
+F3: (2*5)+(2*5)+(2*2)+(2*5)+(2*1)+(2*5)
+F4: (2*2+0*1)+(2*4+1*1)
+F5: (2*4+0*4)
+F6: (1*2+0*1)+(2*4+1*1)
+T1: (0*20)
+Total: [59(58.2%)]@20:41:00
