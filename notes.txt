@@ -115,4 +115,4 @@ Total: [59(64.2%)]@21:39:00
 
 21:40:00: I discovered my Figure 6 script was actually using the Taylor Green code. I'm going to re-run it now while I start on Table 1.
 22:25:00: I sent another email to the author trying to figure out how the stability code for Table 1 was run.
-22:31:00: I'm going to add a license file and see whether I can get this repo running in travis.
+22:31:00: I'm going to add a license file and see whether I can get this repo running in travis
