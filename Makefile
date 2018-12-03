@@ -1,7 +1,7 @@
 #CXXFLAGS := -g
 CXXFLAGS := -O3 -std=c++11
 
-all: bin bin/Couette_circle_convex bin/Couette_circle_nonconvex bin/taylor_vortex_convex bin/taylor_vortex_nonconvex bin/poiseuille_convex bin/poiseuille_nonconvex
+all: bin bin/Couette_circle_convex bin/Couette_circle_nonconvex bin/taylor_vortex_convex bin/taylor_vortex_nonconvex bin/poiseuille_convex bin/poiseuille_convex_stability bin/poiseuille_nonconvex bin/poiseuille_nonconvex_stability
 
 bin:
 	@mkdir -p bin
@@ -21,8 +21,14 @@ bin/taylor_vortex_nonconvex: Vortex/taylor_vortex_nonconvex.cpp
 bin/poiseuille_convex: Poiseuille/poiseuille_convex.cpp
 	g++ $(CXXFLAGS) Poiseuille/poiseuille_convex.cpp -o bin/poiseuille_convex -I include
 
+bin/poiseuille_convex_stability: Poiseuille/poiseuille_convex_stability.cpp
+	g++ $(CXXFLAGS) Poiseuille/poiseuille_convex_stability.cpp -o bin/poiseuille_convex_stability -I include
+
 bin/poiseuille_nonconvex: Poiseuille/poiseuille_nonconvex.cpp
 	g++ $(CXXFLAGS) Poiseuille/poiseuille_nonconvex.cpp -o bin/poiseuille_nonconvex -I include
+
+bin/poiseuille_nonconvex_stability: Poiseuille/poiseuille_nonconvex_stability.cpp
+	g++ $(CXXFLAGS) Poiseuille/poiseuille_nonconvex_stability.cpp -o bin/poiseuille_nonconvex_stability -I include
 
 clean:
 	@rm -r bin
