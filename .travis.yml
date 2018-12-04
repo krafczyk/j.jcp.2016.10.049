@@ -8,4 +8,5 @@ install:
 
 script:
         - make
-        - ./bin/poiseuille_convex --gamma 1.0 --tau 1.7 --Ny 41
+        - bash ./travis/RunSmokeTests.sh
+        - bash ./travis/CheckSmokeTests.sh --test-errors smoke_tests.out --test-cross-section smoke_tests_1.out
