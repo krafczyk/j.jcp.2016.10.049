@@ -9,4 +9,4 @@ install:
 script:
         - make
         - bash ./travis/RunSmokeTests.sh
-        - bash ./travis/CheckSmokeTests.sh --test-errors smoke_tests.out --test-cross-section smoke_tests_1.out
+        - bash ./travis/CheckSmokeResults.sh --test-errors smoke_tests.out --test-cross-section smoke_tests_1.out
