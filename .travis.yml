@@ -5,6 +5,7 @@ dist: xenial
 install:
         - sudo apt-get -y update
         - sudo apt-get -y install build-essential
+        - sudo apt-get -y install parallel
 
 script:
         - make
