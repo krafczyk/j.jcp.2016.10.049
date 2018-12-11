@@ -52,6 +52,7 @@ int main(int argc, char** argv)
   bool dump_solution_passed = false;
   std::string solution_filepath;
   bool header = false;
+  time_t time_limit = 10*60;
 
   ArgParse::ArgParser Parser("Poiseuille Non Convex Simulation");
   Parser.AddArgument("--gamma", "Set the value for gamma", &gamma, ArgParse::Argument::Required);
@@ -110,6 +111,7 @@ int main(int argc, char** argv)
   fprintf(stderr, "U_max/c=%f\n",U_max/c);
   }
 
+  time_t init_time = time(NULL);
  for(n=0;;n++) 
   { 
 
@@ -118,6 +120,10 @@ int main(int argc, char** argv)
     if(n%1000==0) 
     { 
       Error(); 
+      if((time(NULL)-init_time) > time_limit) {
+      	printf("%.14f, %i, %.14f, %.14f, False\n",dx, NY,gamma,tau);
+      	break;
+      }
      
       if(verbose) {
       fprintf(stderr, "The %d th computationa result:\n",n);
