@@ -117,3 +117,4 @@ Total: [59(64.2%)]@21:39:00
 22:25:00: I sent another email to the author trying to figure out how the stability code for Table 1 was run.
 22:31:00: I'm going to add a license file and see whether I can get this repo running in travis
 23:28:00: I've completed adding a 10 minute cutoff to the stability codes and also wrote a couple of infrastructure scripts to manage running all the experiments. One issue which I will need to manage is the length of time necessary to run all of these simulations. It may not be feasible to run them all on my local machine, and we may need to run them on a computing cluster using a job management system.
+23:28:00: Early results from this experiment show that tau values like 0.5088 converge. This means the authors likely didn't actually run down to the ten-thousandths precision. I'm going to edit the script to first run 0.5001 then every thousandths from 0.501 to 3.0. This should be significantly faster.
