@@ -92,7 +92,7 @@ F4: (2*2+0*1)+(2*4+1*1)
 F5: (0*8)
 F6: (1*2+0*1)+(2*4+1*1)
 T1: (0*20)
-Total: [59(52.2%)]@19:55:00
+Total: [70(52.2%)]@19:55:00
 
 20:41:00: Started a plotting script for Figure 5. I did the simplest thing first which was to plot the analytic solutions which are in the plot. These match perfectly.
 
@@ -101,7 +101,7 @@ F4: (2*2+0*1)+(2*4+1*1)
 F5: (2*4+0*4)
 F6: (1*2+0*1)+(2*4+1*1)
 T1: (0*20)
-Total: [59(58.2%)]@20:41:00
+Total: [78(58.2%)]@20:41:00
 
 21:19:00: I found another error. Apparently, the legend in Figure 5 is reversed. the red circles should be beta = 0.1, and the pink circles should be beta = 0.8.
 21:39:00: Figure 5 is now complete!
@@ -111,10 +111,21 @@ F4: (2*2+0*1)+(2*4+1*1)
 F5: (2*8)
 F6: (1*2+0*1)+(2*4+1*1)
 T1: (0*20)
-Total: [59(64.2%)]@21:39:00
+Total: [86(64.2%)]@21:39:00
 
 21:40:00: I discovered my Figure 6 script was actually using the Taylor Green code. I'm going to re-run it now while I start on Table 1.
 22:25:00: I sent another email to the author trying to figure out how the stability code for Table 1 was run.
 22:31:00: I'm going to add a license file and see whether I can get this repo running in travis
 23:28:00: I've completed adding a 10 minute cutoff to the stability codes and also wrote a couple of infrastructure scripts to manage running all the experiments. One issue which I will need to manage is the length of time necessary to run all of these simulations. It may not be feasible to run them all on my local machine, and we may need to run them on a computing cluster using a job management system.
 23:28:00: Early results from this experiment show that tau values like 0.5088 converge. This means the authors likely didn't actually run down to the ten-thousandths precision. I'm going to edit the script to first run 0.5001 then every thousandths from 0.501 to 3.0. This should be significantly faster.
+
+-- reset timer ---
+01:23:00: Completed script to produce table 1 data from results of the RunTable1Simulations.sh script.
+01:23:00: Most of the experiments have now completed after running the problem overnight. There are still two major experiment categories left to run and I'm waiting for them to finish. After the evening they should be finished as well. In total, it will take the Table 1 simulations about 2 days of running time to complete
+
+F3: (2*5)+(2*5)+(2*2)+(2*5)+(2*1)+(2*5)
+F4: (2*2+0*1)+(2*4+1*1)
+F5: (2*8)
+F6: (1*2+0*1)+(2*4+1*1)
+T1: (12*2+6*1+2*0)
+Total: [116(86.6%)]@24:51:00
