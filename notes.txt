@@ -129,3 +129,12 @@ F5: (2*8)
 F6: (1*2+0*1)+(2*4+1*1)
 T1: (12*2+6*1+2*0)
 Total: [116(86.6%)]@24:51:00
+
+01:26:00: Experiments have now completed. The computations took about 2 days of 8 threaded running to finish.
+
+F3: (2*5)+(2*5)+(2*2)+(2*5)+(2*1)+(2*5)
+F4: (2*2+0*1)+(2*4+1*1)
+F5: (2*8)
+F6: (1*2+0*1)+(2*4+1*1)
+T1: (12*2+8*1)
+Total: [118(88.1%)]@24:54:00
