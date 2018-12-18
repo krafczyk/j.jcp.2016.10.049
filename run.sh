@@ -2,7 +2,7 @@
 set -e
 
 # Build binaries
-build.sh
+bash build.sh
 
 # Run Computational Experiments
 bash RunFigure3Simulations.sh
