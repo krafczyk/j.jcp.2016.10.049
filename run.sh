@@ -4,6 +4,9 @@ set -e
 # Build binaries
 bash build.sh
 
+# prep parallel command
+parallel --citation
+
 # Run Computational Experiments
 bash RunFigure3Simulations.sh
 bash RunFigure4Simulations.sh
