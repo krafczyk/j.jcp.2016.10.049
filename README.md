@@ -1,7 +1,12 @@
 # Single-node second-order boundary schemes for the lattice Boltzmann method
 
-``Single-node second-order boundary schemes for the lattice Boltzmann method"
-\cite{10.1016/j.jcp.2016.10.049} describes a scheme for obtaining second order
+This is a Reproduction Package as described in the manuscript "Three Empirical
+Principles for Computational Reproducibility and their Implementation:
+*The Reproduction Package*” by M. S. Krafczyk, A. Shi, A. Bhaskar,
+D. Marinov, & V. Stodden
+
+["Single-node second-order boundary schemes for the lattice Boltzmann method"](https://dx.doi.org/10.1016/j.jcp.2016.10.049)
+describes a scheme for obtaining second order
 accuracy on boundaries in Lattice Boltzmann simulations. This method especially
 treats curved boundaries better than other methods. The authors demonstrate
 this performance through a series of three toy problems for which the analytic
