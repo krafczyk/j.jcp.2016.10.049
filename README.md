@@ -87,3 +87,7 @@ We kept track of our progress and issues inside `notes.txt`. We also have a jupy
 ## Acknowledgement of the Authors
 
 We want to acknowledge the authors Weifeng Zhao and Wen-An Yong for their fine work on this computational experiment. We succeeded to reproduce most aspects of their paper which would not have been possible if their work was not already well done.
+
+## Grant Acknowledgement
+
+This work was partially funded by NSF grants OAC-1839010 and CNS-1646305.
